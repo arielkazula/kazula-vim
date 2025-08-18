@@ -1,3 +1,4 @@
+-- File: lua/mason.lua
 -- 1. Bootstrap Mason
 require("mason").setup()
 
