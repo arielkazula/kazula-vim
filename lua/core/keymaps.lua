@@ -18,9 +18,6 @@ map("n", "-", function() require("oil").open() end,
 map("n", "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>",
     vim.tbl_extend("force", opts, { desc = "Switch header/source" }))
 
--- Misc -------------------------------------------------------------------
-map({ "n", "v" }, "<leader>w", "<cmd>w<CR>", vim.tbl_extend("force", opts, { desc = "Save" }))
-map("n", "<leader>q", "<cmd>qa<CR>", vim.tbl_extend("force", opts, { desc = "Quit all" }))
 
 
 
@@ -58,17 +55,6 @@ wk.add({
         "<leader>fip",
         "<cmd>lua require('fzf-lua').live_grep({ cwd = vim.fn.fnamemodify(vim.fn.expand('%:p:h'), ':h') })<CR>",
         desc = "Parent Directory",
-    },
-    -- LSP Keymaps for navigation
-    {
-        "gd",
-        "<cmd>lua vim.lsp.buf.definition()<CR>",
-        desc = "Go to Definition",
-    },
-    {
-        "gr",
-        "<cmd>lua vim.lsp.buf.references()<CR>",
-        desc = "Show References",
     },
     -- Generate Doxygen comments with Neogen
     {
@@ -129,5 +115,52 @@ wk.add({
             require("fzf-lua").diagnostics_workspace()
         end,
         desc = "Workspace Diagnostics (FZF)",
+    },
+    {
+        "<leader>ss",
+        function()
+            require("fzf-lua").lsp_document_symbols({
+                regex_filter = symbols_filter,
+            })
+        end,
+        desc = "Goto Symbol",
+    },
+
+    { "<leader>sa", "<cmd>FzfLua autocmds<cr>", desc = "Auto Commands" },
+    { "<leader>sb", "<cmd>FzfLua grep_curbuf<cr>", desc = "Buffer" },
+    { "<leader>sg", "<cmd>FzfLua grep_visual<cr>", desc = "Grep" },
+    { "<leader>sc", "<cmd>FzfLua command_history<cr>", desc = "Command History" },
+    { "<leader>sC", "<cmd>FzfLua commands<cr>", desc = "Commands" },
+    { "<leader>sd", "<cmd>FzfLua diagnostics_document<cr>", desc = "Document Diagnostics" },
+    { "<leader>qq", "<cmd>FzfLua quickfix<cr>", desc = "Quickfix" },
+    { "<leader>ql", "<cmd>FzfLua quickfix_stack<cr>", desc = "Quickfix List" },
+    { "<leader>qc", "<cmd>:cclose<cr>", desc = "Quickfix Close" },
+
+    { "<leader>cr", vim.lsp.buf.rename, desc = "Rename" },
+    { "<leader>ca", "<cmd>FzfLua lsp_code_actions<cr>", desc = "Source Action" },
+
+    { "gd", "<cmd>FzfLua lsp_definitions     jump1=true ignore_current_line=true<cr>", desc = "Goto Definition" },
+    { "gr", "<cmd>FzfLua lsp_references      jump1=true ignore_current_line=true<cr>", desc = "References", nowait = true },
+    { "gI", "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>", desc = "Goto Implementation" },
+    { "gy", "<cmd>FzfLua lsp_typedefs        jump1=true ignore_current_line=true<cr>", desc = "Goto T[y]pe Definition" },
+    { "<leader>gc", ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})<cr>", desc = "Goto Configuration Files" },
+    { "<leader><Bar>", ":vsplit<cr>", desc = "Split Screen" },
+    { "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Diagnostics (Trouble)" },
+    { "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics (Trouble)" },
+    { "<leader>cs", "<cmd>Trouble symbols toggle<cr>", desc = "Symbols (Trouble)" },
+    { "<leader>cS", "<cmd>Trouble lsp toggle<cr>", desc = "LSP references/definitions/... (Trouble)" },
+    { "<leader>xL", "<cmd>Trouble loclist toggle<cr>", desc = "Location List (Trouble)" },
+    { "<leader>xQ", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List (Trouble)" },
+    { "<leader>fs", ":RipSubstitute<cr>", mode = { "n", "x" }, desc = " rip substitute" },
+
+})
+
+
+
+require("fzf-lua").setup({
+    keymap = {
+        fzf = {
+            ["ctrl-q"] = "select-all+accept",
+        },
     },
 })
