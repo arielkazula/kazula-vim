@@ -143,7 +143,7 @@ wk.add({
     { "gr", "<cmd>FzfLua lsp_references      jump1=true ignore_current_line=true<cr>", desc = "References", nowait = true },
     { "gI", "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>", desc = "Goto Implementation" },
     { "gy", "<cmd>FzfLua lsp_typedefs        jump1=true ignore_current_line=true<cr>", desc = "Goto T[y]pe Definition" },
-    { "<leader>gc", ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})<cr>", desc = "Goto Configuration Files" },
+    { "<leader>fc", ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})<cr>", desc = "Open Configuration Files" },
     { "<leader><Bar>", ":vsplit<cr>", desc = "Split Screen" },
     { "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Diagnostics (Trouble)" },
     { "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics (Trouble)" },
@@ -152,6 +152,13 @@ wk.add({
     { "<leader>xL", "<cmd>Trouble loclist toggle<cr>", desc = "Location List (Trouble)" },
     { "<leader>xQ", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List (Trouble)" },
     { "<leader>fs", ":RipSubstitute<cr>", mode = { "n", "x" }, desc = " rip substitute" },
+    { "<leader>gb", "<cmd>Gitsigns blame_line<cr>", desc = "Blame Line" },
+    { "<leader>gB", "<cmd>Gitsigns blame<cr>", desc = "Show all Blame" },
+    { "<leader>gr", "<cmd>Gitsigns reset_hunk<cr>", desc = "Reset Hunk" },
+    { "<Leader>rs", "<cmd>Greyjoy<CR>", desc = "[r]un [S]cript " },
+    { "<Leader>re", "<cmd>Greyedit<CR>", desc = "[e]edit before run  [S]cript " },
+
+    
 
 })
 
@@ -164,3 +171,4 @@ require("fzf-lua").setup({
         },
     },
 })
+
