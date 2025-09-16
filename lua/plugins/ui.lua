@@ -187,10 +187,6 @@ return {
     },
     {
         "desdic/greyjoy.nvim",
-        keys = {
-            { "<Leader>gr", "<cmd>Greyjoy<CR>",  desc = "[G]reyjoy [r]un" },
-            { "<Leader>ge", "<cmd>Greyedit<CR>", desc = "[G]reyjoy [e]edit before run" },
-        },
         dependencies = {
             { "akinsho/toggleterm.nvim" }, -- Optional
         },
@@ -356,3 +352,4 @@ return {
         "nvim-treesitter/nvim-treesitter-context"
     },
 }
+
