@@ -23,6 +23,9 @@ local server_opts = {
       "--clang-tidy",
       "--offset-encoding=utf-16",
       "--fallback-style=llvm",
+      "--function-arg-placeholders=1",
+      "-j=8",
+
     },
     on_init = function(client)
       -- Ensure offset encoding is UTF-8 for better compatibility
@@ -93,3 +96,4 @@ require("blink.cmp").setup({
     format_on_save = true,
   },
 })
+
