@@ -1,13 +1,11 @@
 -- lua/plugins/lsp.lua ----------------------------------------------------
 -- This file manages the Language Server Protocol (LSP) and Treesitter 
--- (syntax highlighting) integration.
+-- (syntax highlighting) integration using the modern v2.0+ APIs.
 
 return {
-    -- Automatic installation of LSPs and tools
-    -- Pinning to v1 to avoid breaking changes in v2.0+ (setup_handlers removal)
+    -- 1. Mason: The external tool manager
     {
         "williamboman/mason.nvim",
-        version = "^1.0.0",
         cmd = "Mason",
         build = ":MasonUpdate",
         opts = { ui = { border = "rounded" } },
@@ -22,78 +20,81 @@ return {
         end,
     },
 
+    -- 2. Mason-LSPConfig: Bridges Mason with Neovim's LSP
     {
         "williamboman/mason-lspconfig.nvim",
-        version = "^1.0.0",
-        dependencies = { "williamboman/mason.nvim" },
+        dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
         opts = {
             ensure_installed = {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            automatic_installation = true,
+            -- In v2.0+, automatic_enable replaces setup_handlers.
+            -- It automatically starts any server installed via Mason.
+            automatic_enable = true,
         },
+        config = function(_, opts)
+            local capabilities = require("blink.cmp").get_lsp_capabilities()
+
+            -- Fix Position Encodings Warning globally
+            capabilities.offsetEncoding = { "utf-16" }
+
+            -- NEW API: Set global defaults for ALL servers
+            if vim.lsp.config then
+                vim.lsp.config("*", { capabilities = capabilities })
+            end
+
+            -- Specialized configuration for Clangd (C++)
+            local clangd_config = {
+                capabilities = capabilities,
+                cmd = {
+                    "clangd", "-j=4", "--background-index", "--clang-tidy",
+                    "--completion-style=detailed", "--header-insertion=never",
+                    "--fallback-style=llvm", "--offset-encoding=utf-16",
+                    "--function-arg-placeholders",
+                },
+            }
+
+            -- Specialized configuration for Lua
+            local lua_config = {
+                capabilities = capabilities,
+                settings = {
+                    Lua = {
+                        diagnostics = { globals = { "vim" } },
+                        workspace = { checkThirdParty = false },
+                    },
+                },
+            }
+
+            -- Apply configurations using the most modern API available
+            if vim.lsp.config then
+                vim.lsp.config("clangd", clangd_config)
+                vim.lsp.config("lua_ls", lua_config)
+            else
+                -- Fallback for older Neovim versions (0.10)
+                local lspconfig = require("lspconfig")
+                lspconfig.clangd.setup(clangd_config)
+                lspconfig.lua_ls.setup(lua_config)
+                -- Apply global capabilities to all other servers via default_config
+                lspconfig.util.default_config = vim.tbl_extend("force", lspconfig.util.default_config, {
+                    capabilities = capabilities,
+                })
+            end
+
+            -- Finally, initialize mason-lspconfig to enable the servers
+            require("mason-lspconfig").setup(opts)
+        end,
     },
 
-    -- Core LSP Configuration
+    -- 3. Core LSP Plugin: Handlers and UI
     {
         "neovim/nvim-lspconfig",
         event = { "BufReadPre", "BufNewFile" },
-        dependencies = {
-            "williamboman/mason.nvim",
-            "williamboman/mason-lspconfig.nvim",
-            "p00f/clangd_extensions.nvim",
-            "saghen/blink.cmp",
-        },
+        dependencies = { "saghen/blink.cmp", "p00f/clangd_extensions.nvim" },
         config = function()
-            local lspconfig = require("lspconfig")
-            local capabilities = require("blink.cmp").get_lsp_capabilities()
-
-            -- Fix Position Encodings Warning
-            capabilities.offsetEncoding = { "utf-16" }
-
-            -- Rounded borders for LSP windows
+            -- Rounded borders for LSP documentation windows
             vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
             vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
-
-            -- Standard v1 setup_handlers logic
-            require("mason-lspconfig").setup_handlers({
-                function(server_name)
-                    lspconfig[server_name].setup({ capabilities = capabilities })
-                end,
-
-                ["clangd"] = function()
-                    require("clangd_extensions").setup({
-                        server = {
-                            capabilities = capabilities,
-                            cmd = {
-                                "clangd",
-                                "-j=4",
-                                "--background-index",
-                                "--clang-tidy",
-                                "--completion-style=detailed",
-                                "--header-insertion=never",
-                                "--fallback-style=llvm",
-                                "--offset-encoding=utf-16",
-                                "--function-arg-placeholders",
-                            },
-                        },
-                        extensions = { autoSetHints = true, inlay_hints = { inline = false } },
-                    })
-                end,
-
-                ["lua_ls"] = function()
-                    lspconfig.lua_ls.setup({
-                        capabilities = capabilities,
-                        settings = {
-                            Lua = {
-                                diagnostics = { globals = { "vim" } },
-                                workspace = { checkThirdParty = false },
-                            },
-                        },
-                    })
-                end,
-            })
         end,
     },
 
@@ -113,7 +114,7 @@ return {
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
-    -- Sticky header showing the context (function/class) you are currently in.
+    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
@@ -150,29 +151,20 @@ return {
         },
     },
 
-    -- Improved Diagnostic & Quickfix UI (Trouble.nvim)
+    -- Improved Diagnostic UI (Trouble)
     {
         "folke/trouble.nvim",
         cmd = { "Trouble" },
         opts = { modes = { lsp = { win = { position = "right" } } } },
     },
 
-    -- Highlight and search TODO/FIXME comments
+    -- Todo comments
     {
         "folke/todo-comments.nvim",
         event = "BufReadPost",
         dependencies = { "nvim-lua/plenary.nvim" },
         opts = {
             signs = true,
-            keywords = {
-                FIX = { icon = " ", color = "error", alt = { "FIXME", "BUG" } },
-                TODO = { icon = " ", color = "info" },
-                HACK = { icon = " ", color = "warning" },
-                WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
-                PERF = { icon = " ", alt = { "OPTIM" } },
-                NOTE = { icon = " ", color = "hint" },
-                TEST = { icon = "⏲ ", color = "test" },
-            },
             colors = {
                 error = { "DiagnosticError", "ErrorMsg", "#DC2626" },
                 warning = { "DiagnosticWarn", "WarningMsg", "#FBBF24" },
