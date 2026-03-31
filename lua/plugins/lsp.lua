@@ -19,7 +19,7 @@ return {
         end,
     },
 
-    -- 2. Mason-LSPConfig: Bridges Mason with native LSP
+    -- 2. Mason-LSPConfig
     {
         "williamboman/mason-lspconfig.nvim",
         dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
@@ -37,9 +37,17 @@ return {
             local capabilities = require("blink.cmp").get_lsp_capabilities()
             capabilities.offsetEncoding = { "utf-16" }
 
-            -- Set global defaults
+            -- ROBUST GUARD: Set global defaults for ALL servers.
+            -- This returns nil for any non-file URI (like oil://), preventing 
+            -- the "File URL host" error on Linux before it even starts.
             if vim.lsp.config then
-                vim.lsp.config("*", { capabilities = capabilities })
+                vim.lsp.config("*", { 
+                    capabilities = capabilities,
+                    root_dir = function(path)
+                        if path:match("^%w+://") then return nil end
+                        return nil -- fallback to default detection
+                    end,
+                })
             end
 
             -- Server-specific overrides
@@ -51,20 +59,10 @@ return {
                     "configure.ac", ".git",
                 },
                 cmd = {
-                    "clangd",
-                    "-j=4",
-                    "--background-index",
-                    "--background-index-priority=background",
-                    "--clang-tidy",
-                    "--all-scopes-completion",
-                    "--completion-style=detailed",
-                    "--header-insertion=never",
-                    "--fallback-style=llvm",
-                    "--offset-encoding=utf-16",
-                    "--function-arg-placeholders=true",
-                    "--enable-config",
-                    "--malloc-trim",
-                    "--pch-storage=disk",
+                    "clangd", "-j=4", "--background-index", "--background-index-priority=background",
+                    "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
+                    "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
+                    "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
                 },
             })
 
@@ -78,7 +76,6 @@ return {
                 },
             })
 
-            -- Specialized Harper configuration
             vim.lsp.config("harper_ls", {
                 settings = {
                     ["harper-ls"] = {
@@ -96,15 +93,14 @@ return {
                 },
             })
 
-            -- Safe enabler
+            -- Safer enable logic
             local function safe_enable(server)
                 vim.api.nvim_create_autocmd("FileType", {
                     pattern = "*",
                     callback = function(args)
                         local uri = vim.uri_from_bufnr(args.buf)
-                        if uri:match("^file://") then
-                            vim.lsp.enable(server)
-                        end
+                        if not uri:match("^file://") then return end
+                        vim.lsp.enable(server)
                     end,
                 })
             end
@@ -130,27 +126,19 @@ return {
         end,
     },
 
-    -- CMake Support (Professional C++ Development)
-    -- This makes Neovim behave like CLion/VS.
+    -- CMake Support
     {
         "Civitasv/cmake-tools.nvim",
-        dependencies = { "nvim-lua/plenary.nvim" },
+        lazy = false, -- Ensure commands are always available
         opts = {
             cmake_command = "cmake",
-            cmake_build_directory = "build/${variant:buildType}", -- Logic for Release/Debug splits
+            cmake_build_directory = "build/${variant:buildType}",
             cmake_generate_options = { "-DCMAKE_EXPORT_COMPILE_COMMANDS=1" },
-            cmake_build_options = {},
-            cmake_console_size = 10,
             cmake_show_console = "always",
-            cmake_dap_configuration = { name = "cpp", type = "lldb", request = "launch" },
-            cmake_variants_message = {
-                short = { show = true },
-                long = { show = true, max_length = 40 },
-            },
         },
     },
 
-    -- Advanced Refactoring (Extract Function, Inline Variable, etc.)
+    -- Advanced Refactoring
     {
         "ThePrimeagen/refactoring.nvim",
         dependencies = { "nvim-lua/plenary.nvim", "nvim-treesitter/nvim-treesitter" },
@@ -173,7 +161,6 @@ return {
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
-    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
@@ -187,42 +174,8 @@ return {
         opts = {
             enabled = true,
             languages = {
-                cs = { template = { annotation_convention = "doxygen" } },
-                c = {
-                    template = {
-                        annotation_convention = "custom",
-                        custom = {
-                            { nil, "/**", { no_results = true, type = { "func", "file", "type" } } },
-                            { nil, " * @file", { no_results = true, type = { "file" } } },
-                            { nil, " * $1", { no_results = true, type = { "func", "file", "type" } } },
-                            { nil, " */", { no_results = true, type = { "func", "file", "type" } } },
-                            { nil, "" },
-                            { nil, "/**", { type = { "func", "type" } } },
-                            { nil, " * @brief $1", { type = { "func", "type" } } },
-                            { "parameters", " * @param %s $1" },
-                            { "return_statement", " * @return $1" },
-                            { nil, " */" },
-                        },
-                    },
-                },
-                cpp = {
-                    template = {
-                        annotation_convention = "custom",
-                        custom = {
-                            { nil, "/**", { no_results = true, type = { "func", "file", "class" } } },
-                            { nil, " * @file", { no_results = true, type = { "file" } } },
-                            { nil, " * $1", { no_results = true, type = { "func", "file", "class" } } },
-                            { nil, " */", { no_results = true, type = { "func", "file", "class" } } },
-                            { nil, "" },
-                            { nil, "/**", { type = { "func", "class" } } },
-                            { nil, " * @brief $1", { type = { "func", "class" } } },
-                            { "tparam", " * @tparam %s $1" },
-                            { "parameters", " * @param %s $1" },
-                            { "return_statement", " * @return $1" },
-                            { nil, " */" },
-                        },
-                    },
-                },
+                c = { template = { annotation_convention = "doxygen" } },
+                cpp = { template = { annotation_convention = "doxygen" } },
                 python = { template = { annotation_convention = "google_docstrings" } },
                 lua = { template = { annotation_convention = "ldoc" } },
             },
@@ -253,7 +206,6 @@ return {
                 NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
                 TEST = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
             },
-            gui_style = { fg = "NONE", bg = "BOLD" },
             colors = {
                 error = { "DiagnosticError", "ErrorMsg", "#DC2626" },
                 warning = { "DiagnosticWarn", "WarningMsg", "#FBBF24" },

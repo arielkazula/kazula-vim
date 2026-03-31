@@ -4,6 +4,35 @@ return {
   generator = function(opts, cb)
     local tasks = {
       {
+        name = "C++: Generate compile_commands",
+        builder = function()
+          return {
+            cmd = { "./src/scripts/gen_compile_commands.sh" },
+            -- Using a minimalist component to keep it quiet
+            components = { "default", { "on_output_quickfix", open = false } },
+          }
+        end,
+        condition = {
+          callback = function()
+            return vim.fn.filereadable("./src/scripts/gen_compile_commands.sh") == 1
+          end,
+        },
+      },
+      {
+        name = "Project: Rebuild (gcc Debug)",
+        builder = function()
+          return {
+            cmd = { "./rebuild.sh", "gcc", "Debug" },
+            components = { "default", { "on_output_quickfix", open = true } },
+          }
+        end,
+        condition = {
+          callback = function()
+            return vim.fn.filereadable("./rebuild.sh") == 1
+          end,
+        },
+      },
+      {
         name = "Python: Run current file",
         builder = function()
           return {
@@ -12,20 +41,6 @@ return {
           }
         end,
         condition = { filetype = { "python" } },
-      },
-      {
-        name = "C++: Generate compile_commands",
-        builder = function()
-          return {
-            cmd = { "./src/scripts/gen_compile_commands.sh" },
-            components = { "default", { "on_output_quickfix", open = true } },
-          }
-        end,
-        condition = {
-          callback = function()
-            return vim.fn.filereadable("./src/scripts/gen_compile_commands.sh") == 1
-          end,
-        },
       },
       {
         name = "Docker: Compose Up",

@@ -85,7 +85,7 @@ wk.add({
     { "<leader>fr", function() require("fzf-lua").oldfiles() end, desc = "Recent Files" },
     { "<leader>fc", function() require("snacks").dashboard.pick('files', {cwd = vim.fn.stdpath('config')}) end, desc = "Config Files" },
     { "<leader>fe", "<cmd>Oil --float<CR>", desc = "File Explorer (Oil)" },
-    { "-", function() require("oil").open() end, desc = "Oil Parent Directory" },
+    { "-", function() require("oil").open() end, desc = "Open Parent Directory" },
 
     -- Group: [g]it
     { "<leader>g", group = "git", icon = { icon = "󰊢 ", color = "orange" } },
@@ -118,6 +118,10 @@ wk.add({
     { "<leader>r", group = "run/tasks", icon = { icon = "󰐊 ", color = "green" } },
     { "<leader>rs", "<cmd>OverseerRun<CR>", desc = "Run Task" },
     { "<leader>rt", "<cmd>OverseerToggle<CR>", desc = "Toggle Task List" },
+    
+    -- Direct Task Access (NEW)
+    { "<leader>rc", function() require("overseer").run_template({ name = "C++: Generate compile_commands" }) end, desc = "Generate Compile Commands" },
+    { "<leader>rb", function() require("overseer").run_template({ name = "Project: Rebuild (gcc Debug)" }) end, desc = "Rebuild (gcc Debug)" },
 
     -- Group: [s]earch
     { "<leader>s", group = "search", icon = { icon = "󰍉 ", color = "cyan" } },
