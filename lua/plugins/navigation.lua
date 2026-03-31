@@ -1,6 +1,6 @@
 -- lua/plugins/navigation.lua ---------------------------------------------
 -- This file contains plugins for fuzzy finding, file exploration, 
--- jumping between text, and high-speed project navigation.
+-- and project navigation.
 
 return {
   -- High-performance fuzzy finder (FZF-Lua)
@@ -9,7 +9,6 @@ return {
     dependencies = { "nvim-tree/nvim-web-devicons" },
     cmd = "FzfLua",
     opts = {
-        -- Make the UI look more like modern configs
         winopts = {
             height = 0.85,
             width = 0.80,
@@ -28,8 +27,7 @@ return {
     end,
   },
 
-  -- Harpoon2: Lightning fast file switching
-  -- Unlike fuzzy finders, this lets you 'hook' specific files to keys.
+  -- Harpoon2
   {
     "ThePrimeagen/harpoon",
     branch = "harpoon2",
@@ -45,7 +43,7 @@ return {
     end,
   },
 
-  -- Jump anywhere on the screen with 's' (Flash.nvim)
+  -- Flash.nvim
   {
     "folke/flash.nvim",
     event = "VeryLazy",
@@ -63,7 +61,15 @@ return {
     dependencies = { "nvim-tree/nvim-web-devicons" },
     opts = {
       default_file_explorer = true,
-      columns = { "icon", "permissions", "size", "mtime" },
+      -- Refined icon configuration for 2025
+      columns = {
+        {
+          "icon",
+          default_file = "󰈚 ",
+          directory = "󰉋 ",
+          add_padding = false,
+        },
+      },
       delete_to_trash = true,
       skip_confirm_for_simple_edits = true,
       float = { border = "rounded" },

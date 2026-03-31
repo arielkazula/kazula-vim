@@ -1,6 +1,6 @@
 -- lua/core/keymaps.lua ---------------------------------------------------
--- The Central Source of Truth for all keybindings in the project.
--- Uses `which-key.nvim` (v3+) for intuitive grouping and discovery.
+-- The Central Source of Truth for all keybindings.
+-- Uses `which-key.nvim` (v3+) for intuitive grouping.
 
 local wk = require("which-key")
 
@@ -23,149 +23,101 @@ end
 -- 2. Which-Key Mappings --------------------------------------------------
 
 wk.add({
-    -- Navigation (Flash.nvim)
+    -- Instant Navigation (Flash)
     { "s", function() require("flash").jump() end, mode = { "n", "x", "o" }, desc = "Flash Jump" },
     { "S", function() require("flash").treesitter() end, mode = { "n", "x", "o" }, desc = "Flash Treesitter" },
-    { "r", function() require("flash").remote() end, mode = "o", desc = "Remote Flash" },
-    { "R", function() require("flash").treesitter_search() end, mode = { "o", "x" }, desc = "Treesitter Search" },
-    { "<c-s>", function() require("flash").toggle() end, mode = "c", desc = "Toggle Flash Search" },
 
-    -- Smart Splits
+    -- Window / Split Navigation (Smart Splits)
     { "<C-h>", function() require('smart-splits').move_cursor_left() end, desc = "Go to Left Split" },
     { "<C-j>", function() require('smart-splits').move_cursor_down() end, desc = "Go to Down Split" },
     { "<C-k>", function() require('smart-splits').move_cursor_up() end, desc = "Go to Up Split" },
     { "<C-l>", function() require('smart-splits').move_cursor_right() end, desc = "Go to Right Split" },
-    { "<leader>wr", group = "resize" },
-    { "<leader>wrh", function() require('smart-splits').resize_left() end, desc = "Resize Left" },
-    { "<leader>wrj", function() require('smart-splits').resize_down() end, desc = "Resize Down" },
-    { "<leader>wrk", function() require('smart-splits').resize_up() end, desc = "Resize Up" },
-    { "<leader>wrl", function() require('smart-splits').resize_right() end, desc = "Resize Right" },
 
-    -- Harpoon (Quick file switching)
-    { "<leader>h", group = "harpoon" },
-    { "<leader>ha", function() require("harpoon"):list():add() end, desc = "Harpoon Add File" },
-    { "<leader>hh", function() require("harpoon").ui:toggle_quick_menu(require("harpoon"):list()) end, desc = "Harpoon Menu" },
-    { "<leader>h1", function() require("harpoon"):list():select(1) end, desc = "Harpoon File 1" },
-    { "<leader>h2", function() require("harpoon"):list():select(2) end, desc = "Harpoon File 2" },
-    { "<leader>h3", function() require("harpoon"):list():select(3) end, desc = "Harpoon File 3" },
-    { "<leader>h4", function() require("harpoon"):list():select(4) end, desc = "Harpoon File 4" },
-
-    -- Dial (Increment/Decrement)
-    { "<C-a>", function() return require("dial.map").inc_normal() end, expr = true, desc = "Increment" },
-    { "<C-x>", function() return require("dial.map").dec_normal() end, expr = true, desc = "Decrement" },
-
-    -- Core / General
+    -- Standard Mappings
     { "<leader><Bar>", ":vsplit<cr>", desc = "Split Screen Vertical" },
     { "<leader>_ ", ":split<cr>", desc = "Split Screen Horizontal" },
     { "<A-[>", ":bprevious<CR>", desc = "Previous Buffer" },
     { "<A-]>", ":bnext<CR>", desc = "Next Buffer" },
     { "<leader>cc", ":lua CopyFilePathAndLine()<CR>", desc = "Copy File Path and Line" },
 
-    -- Groups
-    { "<leader>b", group = "buffer", expand = function() return require("which-key.extras").expand.buf() end },
-    { "<leader>c", group = "code" },
-    { "<leader>d", group = "debug" },
-    { "<leader>f", group = "file/find" },
-    { "<leader>g", group = "git" },
-    { "<leader>q", group = "quit/session" },
-    { "<leader>r", group = "run/tasks" },
-    { "<leader>s", group = "search/replace" },
-    { "<leader>u", group = "ui", icon = { icon = "󰙵 ", color = "cyan" } },
-    { "<leader>w", group = "windows", proxy = "<c-w>", expand = function() return require("which-key.extras").expand.win() end },
-    { "<leader>x", group = "diagnostics/quickfix", icon = { icon = "󱖫 ", color = "green" } },
-    { "[", group = "prev" },
-    { "]", group = "next" },
+    -- Group: [b]uffer
+    { "<leader>b", group = "buffer", icon = { icon = "󰈙 ", color = "azure" }, expand = function() return require("which-key.extras").expand.buf() end },
 
-    -- File / Find
-    { "<leader><leader>", function() require("fzf-lua").files() end, desc = "Find Files (FZF)" },
-    { "<leader>ff", function() require("fzf-lua").files() end, desc = "Find Files (FZF)" },
-    { "<leader>fg", function() require("fzf-lua").live_grep() end, desc = "Live Grep" },
-    { "<leader>fb", function() require("fzf-lua").buffers() end, desc = "Buffers" },
-    { "<leader>fc", function() require("snacks").dashboard.pick('files', {cwd = vim.fn.stdpath('config')}) end, desc = "Open Config" },
-    
-    -- Specialized Find
-    { "<leader>fi", group = "Grep In" },
-    { "<leader>fid", function() require('fzf-lua').live_grep({ cwd = vim.fn.expand('%:p:h') }) end, desc = "Current Directory" },
-    { "<leader>fip", function() require('fzf-lua').live_grep({ cwd = vim.fn.fnamemodify(vim.fn.expand('%:p:h'), ':h') }) end, desc = "Parent Directory" },
-    
-    { "<leader>fw", group = "Workspace" },
-    { "<leader>fws", function() require("fzf-lua").lsp_workspace_symbols() end, desc = "Workspace Symbols" },
-    { "<leader>fwd", function() require("fzf-lua").diagnostics_workspace() end, desc = "Workspace Diagnostics" },
-    { "<leader>e", "<cmd>Oil --float<CR>", desc = "Oil File Explorer" },
-    { "-", function() require("oil").open() end, desc = "Oil Parent Directory" },
-
-    -- Code / LSP
+    -- Group: [c]ode (LSP, Formatting, Annotations)
+    { "<leader>c", group = "code", icon = { icon = "󰅩 ", color = "yellow" } },
     { "gd", "<cmd>FzfLua lsp_definitions jump1=true ignore_current_line=true<cr>", desc = "Goto Definition" },
     { "grr", "<cmd>FzfLua lsp_references jump1=true ignore_current_line=true<cr>", desc = "References (FZF)" },
     { "gri", "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>", desc = "Goto Implementation" },
     { "gy", "<cmd>FzfLua lsp_typedefs jump1=true ignore_current_line=true<cr>", desc = "Goto Type Definition" },
-    { "gra", function() vim.lsp.buf.code_action() end, desc = "Code Action (LSP)" }, -- FIXED: Using native call for better resolving
+    { "gra", function() vim.lsp.buf.code_action() end, desc = "Code Action" },
     { "grn", vim.lsp.buf.rename, desc = "Rename (LSP)" },
-    
     { "K", function() vim.lsp.buf.hover() end, desc = "LSP Hover Docs" },
     { "<leader>cd", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
-    { "<leader>cr", vim.lsp.buf.rename, desc = "Rename (LSP)" },
-    { "<leader>ca", function() vim.lsp.buf.code_action() end, desc = "Code Action (LSP)" }, -- FIXED: Using native call for better resolving
+    { "<leader>cr", vim.lsp.buf.rename, desc = "Rename symbol" },
+    { "<leader>ca", function() vim.lsp.buf.code_action() end, desc = "Code Actions" },
     { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>", desc = "Switch Header/Source (C++)" },
-    { "<leader>cn", function() require("neogen").generate() end, desc = "Generate Annotations (Neogen)" },
-    { "<leader>ss", function() require("fzf-lua").lsp_document_symbols() end, desc = "Goto Symbol" },
+    { "<leader>cn", function() require("neogen").generate() end, desc = "Generate Annotations" },
+    { "<leader>cs", function() require("fzf-lua").lsp_document_symbols() end, desc = "Document Symbols" },
+    { "<leader>cf", function() require("conform").format({ async = true, lsp_fallback = true }) end, desc = "Format Buffer" },
 
-    -- Search & Replace
-    { "<leader>sa", "<cmd>FzfLua autocmds<cr>", desc = "Auto Commands" },
-    { "<leader>sb", "<cmd>FzfLua grep_curbuf<cr>", desc = "Buffer" },
-    { "<leader>sc", "<cmd>FzfLua command_history<cr>", desc = "Command History" },
-    { "<leader>sC", "<cmd>FzfLua commands<cr>", desc = "Commands" },
-    { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace (Grug-Far)" },
-    { "<leader>sw", function() require("grug-far").open({ prefills = { search = vim.fn.expand("<cword>") } }) end, desc = "Replace Word" },
-    { "<leader>fs", ":RipSubstitute<cr>", mode = { "n", "x" }, desc = "Rip Substitute (Regex)" },
+    -- Group: [f]ile (Find, Explorer)
+    { "<leader>f", group = "file", icon = { icon = "󰈞 ", color = "blue" } },
+    { "<leader>ff", function() require("fzf-lua").files() end, desc = "Find Files" },
+    { "<leader>fb", function() require("fzf-lua").buffers() end, desc = "Find Buffers" },
+    { "<leader>fr", function() require("fzf-lua").oldfiles() end, desc = "Recent Files" },
+    { "<leader>fc", function() require("snacks").dashboard.pick('files', {cwd = vim.fn.stdpath('config')}) end, desc = "Config Files" },
+    { "<leader>fe", "<cmd>Oil --float<CR>", desc = "File Explorer (Oil)" },
+    { "-", function() require("oil").open() end, desc = "Open Parent Directory" },
 
-    -- Git (Gitsigns & Diffview)
+    -- Group: [g]it
+    { "<leader>g", group = "git", icon = { icon = "󰊢 ", color = "orange" } },
     { "<leader>gp", function() require("gitsigns").preview_hunk() end, desc = "Preview Hunk" },
     { "<leader>gb", function() require("gitsigns").blame_line() end, desc = "Blame Line" },
-    { "<leader>gB", function() require("gitsigns").blame() end, desc = "Show All Blame" },
-    { "<leader>gr", function() require("gitsigns").reset_hunk() end, desc = "Reset Hunk" },
     { "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "Diffview Open" },
     { "<leader>gc", "<cmd>DiffviewClose<cr>", desc = "Diffview Close" },
     { "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "File History" },
 
-    -- Diagnostics & Trouble
-    { "<leader>xx", "<cmd>Trouble diagnostics toggle filter.buf=0 filter.severity=vim.diagnostic.severity.ERROR<cr>", desc = "Buffer Errors" },
-    { "<leader>xw", "<cmd>Trouble diagnostics toggle filter.buf=0 filter.severity=vim.diagnostic.severity.WARN<cr>", desc = "Buffer Warnings" },
-    { "<leader>xa", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics" },
-    { "<leader>xX", "<cmd>Trouble diagnostics toggle<cr>", desc = "Workspace Diagnostics" },
-    { "<leader>cs", "<cmd>Trouble symbols toggle<cr>", desc = "Symbols" },
-    { "<leader>cS", "<cmd>Trouble lsp toggle<cr>", desc = "LSP References/Definitions (Trouble)" },
-    { "<leader>xL", "<cmd>Trouble loclist toggle<cr>", desc = "Location List (Trouble)" },
-    { "<leader>xQ", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List (Trouble)" },
-    
-    { "]e", function() goto_next_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Next Error" },
-    { "[e", function() goto_prev_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Prev Error" },
-    { "]w", function() goto_next_diagnostic(vim.diagnostic.severity.WARN) end, desc = "Next Warning" },
-    { "[w", function() goto_prev_diagnostic(vim.diagnostic.severity.WARN) end, desc = "Prev Warning" },
-    { "]t", function() require("todo-comments").jump_next() end, desc = "Next TODO" },
-    { "[t", function() require("todo-comments").jump_prev() end, desc = "Prev TODO" },
+    -- Group: [h]arpoon
+    { "<leader>h", group = "harpoon", icon = { icon = "󰛢 ", color = "red" } },
+    { "<leader>ha", function() require("harpoon"):list():add() end, desc = "Add File" },
+    { "<leader>hh", function() require("harpoon").ui:toggle_quick_menu(require("harpoon"):list()) end, desc = "Menu" },
 
-    -- Tasks / Run (Overseer)
+    -- Group: [q]uit/session
+    { "<leader>q", group = "session", icon = { icon = "󰗼 ", color = "purple" } },
+    { "<leader>qs", function() require("persistence").load() end, desc = "Restore Session" },
+    { "<leader>ql", function() require("persistence").load({ last = true }) end, desc = "Restore Last" },
+
+    -- Group: [r]un (Overseer)
+    { "<leader>r", group = "run/tasks", icon = { icon = "󰐊 ", color = "green" } },
     { "<leader>rs", "<cmd>OverseerRun<CR>", desc = "Run Task" },
     { "<leader>rt", "<cmd>OverseerToggle<CR>", desc = "Toggle Task List" },
-    { "<leader>ri", "<cmd>OverseerInfo<CR>", desc = "Overseer Info" },
-    { "<leader>rb", "<cmd>OverseerBuild<CR>", desc = "Build Task" },
 
-    -- Sessions (Persistence.nvim)
-    { "<leader>qs", function() require("persistence").load() end, desc = "Restore Session" },
-    { "<leader>ql", function() require("persistence").load({ last = true }) end, desc = "Restore Last Session" },
-    { "<leader>qd", function() require("persistence").stop() end, desc = "Don't Save Session" },
+    -- Group: [s]earch/replace
+    { "<leader>s", group = "search", icon = { icon = "󰍉 ", color = "cyan" } },
+    { "<leader>sg", function() require("fzf-lua").live_grep() end, desc = "Live Grep" },
+    { "<leader>sw", function() require("fzf-lua").grep_cword() end, desc = "Search Word" },
+    { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace (Grug-Far)" },
+    { "<leader>sf", ":RipSubstitute<cr>", desc = "Rip Substitute (Regex)" },
 
-    -- UI / Misc
-    { "<leader>ul", "<cmd>LspRestart<cr>", desc = "Restart LSP" },
+    -- Group: [u]i
+    { "<leader>u", group = "ui", icon = { icon = "󰙵 ", color = "cyan" } },
     { "<leader>un", function() Snacks.notifier.show_history() end, desc = "Notification History" },
-    { "<leader>ud", function() Snacks.dashboard.open() end, desc = "Open Dashboard" },
-    { "<leader>uf", "za", desc = "Toggle Folding (UFO)" },
-    { "gx", desc = "Open with system app" },
+    { "<leader>ud", function() Snacks.dashboard.open() end, desc = "Dashboard" },
+    { "<leader>uf", "za", desc = "Toggle Fold" },
+    { "<leader>ul", "<cmd>LspRestart<cr>", desc = "Restart LSP" },
+
+    -- Group: [x] diagnostics/quickfix
+    { "<leader>x", group = "diagnostics", icon = { icon = "󱖫 ", color = "green" } },
+    { "<leader>xx", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics" },
+    { "<leader>xX", "<cmd>Trouble diagnostics toggle<cr>", desc = "Workspace Diagnostics" },
+    { "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Location List" },
+    { "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List" },
+
+    -- Navigation
+    { "[e", function() goto_prev_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Prev Error" },
+    { "]e", function() goto_next_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Next Error" },
+    { "[t", function() require("todo-comments").jump_prev() end, desc = "Prev TODO" },
+    { "]t", function() require("todo-comments").jump_next() end, desc = "Next TODO" },
     
-    -- UFO Folding specific (Non-leader)
-    { "zR", function() require('ufo').openAllFolds() end, desc = "Open All Folds" },
-    { "zM", function() require('ufo').closeAllFolds() end, desc = "Close All Folds" },
-    { "zr", function() require('ufo').openFoldsExceptKinds() end, desc = "Open Folds Except Kinds" },
-    { "zm", function() require('ufo').closeFoldsWith() end, desc = "Close Folds With" },
+    { "gx", desc = "Open with system app" },
 })
