@@ -12,6 +12,7 @@ return {
         config = function(_, opts)
             require("mason").setup(opts)
             local mr = require("mason-registry")
+            -- tools to ensure are installed
             local packages = { "clang-format", "jq", "black", "codespell", "shfmt", "stylua" }
             for _, tool in ipairs(packages) do
                 local p = mr.get_package(tool)
@@ -29,29 +30,27 @@ return {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            -- In v2.0+, automatic_enable replaces setup_handlers.
-            -- It automatically starts any server installed via Mason.
             automatic_enable = true,
         },
         config = function(_, opts)
             local capabilities = require("blink.cmp").get_lsp_capabilities()
 
-            -- Fix Position Encodings Warning globally
+            -- Fix Position Encodings Warning
             capabilities.offsetEncoding = { "utf-16" }
-
-            -- NEW API: Set global defaults for ALL servers
-            if vim.lsp.config then
-                vim.lsp.config("*", { capabilities = capabilities })
-            end
 
             -- Specialized configuration for Clangd (C++)
             local clangd_config = {
                 capabilities = capabilities,
                 cmd = {
-                    "clangd", "-j=4", "--background-index", "--clang-tidy",
-                    "--completion-style=detailed", "--header-insertion=never",
-                    "--fallback-style=llvm", "--offset-encoding=utf-16",
-                    "--function-arg-placeholders",
+                    "clangd",
+                    "-j=4",
+                    "--background-index",
+                    "--clang-tidy",
+                    "--completion-style=detailed",
+                    "--header-insertion=never",
+                    "--fallback-style=llvm",
+                    "--offset-encoding=utf-16",
+                    "--function-arg-placeholders=true", -- FIX: requires boolean value
                 },
             }
 
@@ -66,39 +65,36 @@ return {
                 },
             }
 
-            -- Apply configurations using the most modern API available
+            -- Apply configurations
             if vim.lsp.config then
+                vim.lsp.config("*", { capabilities = capabilities })
                 vim.lsp.config("clangd", clangd_config)
                 vim.lsp.config("lua_ls", lua_config)
             else
-                -- Fallback for older Neovim versions (0.10)
                 local lspconfig = require("lspconfig")
                 lspconfig.clangd.setup(clangd_config)
                 lspconfig.lua_ls.setup(lua_config)
-                -- Apply global capabilities to all other servers via default_config
                 lspconfig.util.default_config = vim.tbl_extend("force", lspconfig.util.default_config, {
                     capabilities = capabilities,
                 })
             end
 
-            -- Finally, initialize mason-lspconfig to enable the servers
             require("mason-lspconfig").setup(opts)
         end,
     },
 
-    -- 3. Core LSP Plugin: Handlers and UI
+    -- 3. Core LSP Plugin
     {
         "neovim/nvim-lspconfig",
         event = { "BufReadPre", "BufNewFile" },
         dependencies = { "saghen/blink.cmp", "p00f/clangd_extensions.nvim" },
         config = function()
-            -- Rounded borders for LSP documentation windows
             vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
             vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
         end,
     },
 
-    -- Advanced Syntax Highlighting (Treesitter)
+    -- Treesitter
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -114,14 +110,13 @@ return {
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
-    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
         opts = { mode = "cursor", max_lines = 3 },
     },
 
-    -- Documentation Generator (Neogen)
+    -- Documentation (Neogen)
     {
         "danymat/neogen",
         cmd = "Neogen",
@@ -151,14 +146,14 @@ return {
         },
     },
 
-    -- Improved Diagnostic UI (Trouble)
+    -- Diagnostics UI (Trouble)
     {
         "folke/trouble.nvim",
         cmd = { "Trouble" },
         opts = { modes = { lsp = { win = { position = "right" } } } },
     },
 
-    -- Todo comments
+    -- Todo-comments
     {
         "folke/todo-comments.nvim",
         event = "BufReadPost",
