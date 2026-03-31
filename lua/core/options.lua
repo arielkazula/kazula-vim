@@ -43,19 +43,21 @@ o.undofile       = true          -- Persistent undo
 o.swapfile       = false         -- Don't use swap files
 
 -- Diagnostics Configuration ----------------------------------------------
-local signs = { Error = "󰅚 ", Warn = "󰀪 ", Hint = "󰌶 ", Info = "󰋽 " }
-for type, icon in pairs(signs) do
-    local hl = "DiagnosticSign" .. type
-    vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-end
-
+-- Modern API for defining diagnostic signs (Nvim 0.10+)
 vim.diagnostic.config({
+    signs = {
+        text = {
+            [vim.diagnostic.severity.ERROR] = "󰅚 ",
+            [vim.diagnostic.severity.WARN]  = "󰀪 ",
+            [vim.diagnostic.severity.HINT]  = "󰌶 ",
+            [vim.diagnostic.severity.INFO]  = "󰋽 ",
+        },
+    },
     virtual_text = {
         prefix = "●",
-        source = "if_many", -- Show source only if multiple LSPs are running
+        source = "if_many",
     },
-    underline = true,       -- Better visual cue for where the error is
-    signs = true,
+    underline = true,
     severity_sort = true,
     float = {
         border = "rounded",
