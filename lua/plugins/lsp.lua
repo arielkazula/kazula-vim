@@ -1,6 +1,6 @@
 -- lua/plugins/lsp.lua ----------------------------------------------------
--- This file manages LSP and Treesitter using Neovim 0.11+ native APIs.
--- It avoids the deprecated nvim-lspconfig "framework" (setup calls).
+-- This file manages LSP and Treesitter with specialized fixes for 
+-- oil.nvim and Linux URI strictness.
 
 return {
     -- 1. Mason: Tool management
@@ -29,42 +29,48 @@ return {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            automatic_enable = true,
+            -- Disable automatic_enable to prevent crashing on non-file URIs (oil://)
+            automatic_enable = false,
         },
         config = function(_, opts)
-            -- Ensure nvim-lspconfig is loaded so it registers templates with vim.lsp.config
-            require("lspconfig")
-            
+            local lspconfig = require("lspconfig")
+            local mlsp = require("mason-lspconfig")
+            mlsp.setup(opts)
+
             local capabilities = require("blink.cmp").get_lsp_capabilities()
             capabilities.offsetEncoding = { "utf-16" }
 
-            -- Set global defaults for ALL servers using the new 0.11 API
-            vim.lsp.config("*", {
-                capabilities = capabilities,
-            })
+            -- Global guard for all servers to prevent them from starting on oil buffers
+            -- This prevents the "File URL host must be localhost" error on Linux.
+            local function safe_setup(server_name, config)
+                config = config or {}
+                config.capabilities = vim.tbl_deep_extend("force", capabilities, config.capabilities or {})
+                
+                -- Guard: Disable the server if the root_dir or URI belongs to oil.nvim
+                local original_on_new_config = config.on_new_config
+                config.on_new_config = function(new_config, new_root_dir)
+                    if new_root_dir and (new_root_dir:match("^oil:") or new_root_dir:match("^%w+://")) then
+                        new_config.enabled = false
+                    end
+                    if original_on_new_config then
+                        original_on_new_config(new_config, new_root_dir)
+                    end
+                end
 
-            -- Specialized configuration for Clangd (C++)
-            -- Restored performance flags and added priority settings.
-            vim.lsp.config("clangd", {
+                lspconfig[server_name].setup(config)
+            end
+
+            -- Setup servers with specific configs
+            safe_setup("clangd", {
                 cmd = {
-                    "clangd",
-                    "-j=4",
-                    "--background-index",
-                    "--background-index-priority=background",
-                    "--clang-tidy",
-                    "--completion-style=detailed",
-                    "--enable-config",
-                    "--fallback-style=llvm",
-                    "--header-insertion=never",
-                    "--malloc-trim",
-                    "--pch-storage=disk",
-                    "--offset-encoding=utf-16",
+                    "clangd", "-j=4", "--background-index", "--clang-tidy",
+                    "--completion-style=detailed", "--header-insertion=never",
+                    "--fallback-style=llvm", "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true",
                 },
             })
 
-            -- Specialized configuration for Lua
-            vim.lsp.config("lua_ls", {
+            safe_setup("lua_ls", {
                 settings = {
                     Lua = {
                         diagnostics = { globals = { "vim" } },
@@ -73,36 +79,37 @@ return {
                 },
             })
 
-            -- Optimized Harper (Grammar/Spell Check)
-            vim.lsp.config("harper_ls", {
+            safe_setup("harper_ls", {
                 settings = {
                     ["harper-ls"] = { linters = { spell_check = true } },
                 },
             })
 
-            -- Finally, initialize mason-lspconfig to enable the servers
-            require("mason-lspconfig").setup(opts)
+            -- Setup all other Mason-installed servers automatically
+            for _, server in ipairs(mlsp.get_installed_servers()) do
+                if not vim.tbl_contains({ "clangd", "lua_ls", "harper_ls" }, server) then
+                    safe_setup(server)
+                end
+            end
         end,
     },
 
-    -- 3. Core LSP Plugin: Global UI and Handlers
+    -- 3. Core LSP Plugin: Global UI
     {
         "neovim/nvim-lspconfig",
         event = { "BufReadPre", "BufNewFile" },
         dependencies = { "saghen/blink.cmp", "p00f/clangd_extensions.nvim" },
         config = function()
-            -- Set up global UI preferences
             vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
             vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
             
-            -- Initialize clangd_extensions (non-LSP features like hints)
             require("clangd_extensions").setup({
                 extensions = { autoSetHints = true, inlay_hints = { inline = false } },
             })
         end,
     },
 
-    -- Advanced Syntax Highlighting (Treesitter)
+    -- Treesitter
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -118,14 +125,13 @@ return {
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
-    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
         opts = { mode = "cursor", max_lines = 3 },
     },
 
-    -- Documentation Generator (Neogen)
+    -- Neogen
     {
         "danymat/neogen",
         cmd = "Neogen",
@@ -155,7 +161,7 @@ return {
         },
     },
 
-    -- Improved Diagnostic UI (Trouble)
+    -- Trouble
     {
         "folke/trouble.nvim",
         cmd = { "Trouble" },
