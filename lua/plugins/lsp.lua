@@ -1,6 +1,6 @@
 -- lua/plugins/lsp.lua ----------------------------------------------------
--- This file manages the Language Server Protocol (LSP) and Treesitter 
--- (syntax highlighting) integration.
+-- This file manages LSP and Treesitter using Neovim 0.11+ native APIs.
+-- It avoids the deprecated nvim-lspconfig "framework" (setup calls).
 
 return {
     -- 1. Mason: Tool management
@@ -20,57 +20,49 @@ return {
         end,
     },
 
-    -- 2. Mason-LSPConfig: Bridges Mason with lspconfig
+    -- 2. Mason-LSPConfig: Bridges Mason with native LSP
     {
         "williamboman/mason-lspconfig.nvim",
-        dependencies = { "williamboman/mason.nvim" },
+        dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
         opts = {
             ensure_installed = {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            -- We handle configuration manually via lspconfig for better control
-            automatic_enable = false,
+            -- In v2.0+, this automatically calls vim.lsp.enable()
+            automatic_enable = true,
         },
-    },
-
-    -- 3. Core LSP Configuration (nvim-lspconfig)
-    {
-        "neovim/nvim-lspconfig",
-        event = { "BufReadPre", "BufNewFile" },
-        dependencies = { 
-            "saghen/blink.cmp", 
-            "p00f/clangd_extensions.nvim",
-            "williamboman/mason-lspconfig.nvim",
-        },
-        config = function()
-            local lspconfig = require("lspconfig")
+        config = function(_, opts)
+            -- Ensure nvim-lspconfig is loaded so it registers templates with vim.lsp.config
+            require("lspconfig")
+            
             local capabilities = require("blink.cmp").get_lsp_capabilities()
+            -- Force UTF-16 to resolve position encoding conflicts (e.g. clangd)
+            capabilities.offsetEncoding = { "utf-16" }
 
-            -- Rounded borders for floating windows
-            vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
-            vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
+            -- Set global defaults for ALL servers using the new 0.11 API
+            vim.lsp.config("*", {
+                capabilities = capabilities,
+            })
 
-            -- Specialized Clangd (C++) configuration
-            -- Relying on lspconfig's default root_dir and URI handling for stability.
-            require("clangd_extensions").setup({
-                server = {
-                    capabilities = capabilities,
-                    cmd = {
-                        "clangd",
-                        "--background-index",
-                        "--clang-tidy",
-                        "--completion-style=detailed",
-                        "--header-insertion=iwyu",
-                        "--fallback-style=llvm",
-                        "--offset-encoding=utf-16", -- Required for many clients to align with clangd
-                    },
+            -- Specialized configuration for Clangd (C++)
+            -- We merge our custom flags into the existing clangd template
+            vim.lsp.config("clangd", {
+                cmd = {
+                    "clangd",
+                    "-j=4",
+                    "--background-index",
+                    "--clang-tidy",
+                    "--completion-style=detailed",
+                    "--header-insertion=never",
+                    "--fallback-style=llvm",
+                    "--offset-encoding=utf-16",
+                    "--function-arg-placeholders=true",
                 },
             })
 
-            -- Specialized Lua configuration
-            lspconfig.lua_ls.setup({
-                capabilities = capabilities,
+            -- Specialized configuration for Lua
+            vim.lsp.config("lua_ls", {
                 settings = {
                     Lua = {
                         diagnostics = { globals = { "vim" } },
@@ -80,26 +72,35 @@ return {
             })
 
             -- Optimized Harper (Grammar/Spell Check)
-            lspconfig.harper_ls.setup({
-                capabilities = capabilities,
+            vim.lsp.config("harper_ls", {
                 settings = {
                     ["harper-ls"] = { linters = { spell_check = true } },
                 },
             })
 
-            -- Default setup for other servers managed by Mason
-            local mlsp = require("mason-lspconfig")
-            for _, server in ipairs(mlsp.get_installed_servers()) do
-                if server ~= "clangd" and server ~= "lua_ls" and server ~= "harper_ls" then
-                    lspconfig[server].setup({
-                        capabilities = capabilities,
-                    })
-                end
-            end
+            -- Finally, initialize mason-lspconfig to enable the servers
+            require("mason-lspconfig").setup(opts)
         end,
     },
 
-    -- Treesitter: Syntax Highlighting
+    -- 3. Core LSP Plugin: Global UI and Handlers
+    {
+        "neovim/nvim-lspconfig",
+        event = { "BufReadPre", "BufNewFile" },
+        dependencies = { "saghen/blink.cmp", "p00f/clangd_extensions.nvim" },
+        config = function()
+            -- Set up global UI preferences
+            vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
+            vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
+            
+            -- Initialize clangd_extensions (non-LSP features like hints)
+            require("clangd_extensions").setup({
+                extensions = { autoSetHints = true, inlay_hints = { inline = false } },
+            })
+        end,
+    },
+
+    -- Advanced Syntax Highlighting (Treesitter)
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -152,14 +153,14 @@ return {
         },
     },
 
-    -- Diagnostics UI (Trouble)
+    -- Improved Diagnostic UI (Trouble)
     {
         "folke/trouble.nvim",
         cmd = { "Trouble" },
         opts = { modes = { lsp = { win = { position = "right" } } } },
     },
 
-    -- Todo-comments
+    -- Todo comments
     {
         "folke/todo-comments.nvim",
         event = "BufReadPost",
