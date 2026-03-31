@@ -52,7 +52,7 @@ wk.add({
     { "gra", function() vim.lsp.buf.code_action() end, desc = "Code Action" },
     { "grn", vim.lsp.buf.rename, desc = "Rename (LSP)" },
     { "K", function() vim.lsp.buf.hover() end, desc = "LSP Hover Docs" },
-    { "<leader>cd", function() require("neogen").generate() end, desc = "Doxygen Annotation" }, -- NEW KEYMAP
+    { "<leader>cd", function() require("neogen").generate() end, desc = "Doxygen Annotation" },
     { "<leader>cl", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
     { "<leader>cr", vim.lsp.buf.rename, desc = "Rename symbol" },
     { "<leader>ca", function() vim.lsp.buf.code_action() end, desc = "Code Actions" },
@@ -60,6 +60,23 @@ wk.add({
     { "<leader>cn", function() require("neogen").generate() end, desc = "Generate Annotations" },
     { "<leader>cs", function() require("fzf-lua").lsp_document_symbols() end, desc = "Document Symbols" },
     { "<leader>cf", function() require("conform").format({ async = true, lsp_fallback = true }) end, desc = "Format Buffer" },
+    
+    -- Sub-Group: [c]ode [m]cmake
+    { "<leader>cm", group = "cmake", icon = { icon = "󰔚 ", color = "blue" } },
+    { "<leader>cmg", "<cmd>CMakeGenerate<cr>", desc = "Generate" },
+    { "<leader>cmb", "<cmd>CMakeBuild<cr>", desc = "Build" },
+    { "<leader>cmr", "<cmd>CMakeRun<cr>", desc = "Run" },
+    { "<leader>cmc", "<cmd>CMakeConfigure<cr>", desc = "Configure" },
+    { "<leader>cmt", "<cmd>CMakeSelectBuildTarget<cr>", desc = "Select Target" },
+    { "<leader>cmv", "<cmd>CMakeSelectBuildType<cr>", desc = "Select Variant" },
+    { "<leader>cms", "<cmd>CMakeStop<cr>", desc = "Stop" },
+
+    -- Sub-Group: [c]ode [r]refactor
+    { "<leader>cx", group = "refactor", icon = { icon = "󰪹 ", color = "orange" } },
+    { "<leader>cxe", function() require('refactoring').refactor('Extract Function') end, mode = { "v" }, desc = "Extract Function" },
+    { "<leader>cxf", function() require('refactoring').refactor('Extract Function To File') end, mode = { "v" }, desc = "Extract To File" },
+    { "<leader>cxv", function() require('refactoring').refactor('Extract Variable') end, mode = { "v" }, desc = "Extract Variable" },
+    { "<leader>cxi", function() require('refactoring').refactor('Inline Variable') end, mode = { "n", "v" }, desc = "Inline Variable" },
 
     -- Group: [f]ile
     { "<leader>f", group = "file", icon = { icon = "󰈞 ", color = "blue" } },
@@ -68,7 +85,7 @@ wk.add({
     { "<leader>fr", function() require("fzf-lua").oldfiles() end, desc = "Recent Files" },
     { "<leader>fc", function() require("snacks").dashboard.pick('files', {cwd = vim.fn.stdpath('config')}) end, desc = "Config Files" },
     { "<leader>fe", "<cmd>Oil --float<CR>", desc = "File Explorer (Oil)" },
-    { "-", function() require("oil").open() end, desc = "Open Parent Directory" },
+    { "-", function() require("oil").open() end, desc = "Oil Parent Directory" },
 
     -- Group: [g]it
     { "<leader>g", group = "git", icon = { icon = "󰊢 ", color = "orange" } },
@@ -77,6 +94,15 @@ wk.add({
     { "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "Diffview Open" },
     { "<leader>gc", "<cmd>DiffviewClose<cr>", desc = "Diffview Close" },
     { "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "File History" },
+    
+    -- Sub-Group: [g]it [x] conflicts
+    { "<leader>gx", group = "conflicts", icon = { icon = "󰆚 ", color = "red" } },
+    { "<leader>gxo", "<cmd>GitConflictChooseOurs<cr>", desc = "Choose Ours" },
+    { "<leader>gxt", "<cmd>GitConflictChooseTheirs<cr>", desc = "Choose Theirs" },
+    { "<leader>gxb", "<cmd>GitConflictChooseBoth<cr>", desc = "Choose Both" },
+    { "<leader>gx0", "<cmd>GitConflictChooseNone<cr>", desc = "Choose None" },
+    { "<leader>gx]", "<cmd>GitConflictNextConflict<cr>", desc = "Next Conflict" },
+    { "<leader>gx[", "<cmd>GitConflictPrevConflict<cr>", desc = "Prev Conflict" },
 
     -- Group: [h]arpoon
     { "<leader>h", group = "harpoon", icon = { icon = "󰛢 ", color = "red" } },

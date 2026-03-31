@@ -78,12 +78,10 @@ return {
                 },
             })
 
-            -- Refined Harper configuration to ENSURE "Add to dictionary" is ALWAYS shown
+            -- Specialized Harper configuration
             vim.lsp.config("harper_ls", {
                 settings = {
                     ["harper-ls"] = {
-                        -- Use workspaceDictPath for repo-synced dictionary
-                        -- This is more robust for project-specific terms.
                         workspaceDictPath = "./spell/dictionary.txt",
                         dialect = "American",
                         linters = {
@@ -92,9 +90,7 @@ return {
                             LongSentences = false,
                             SpelledNumbers = false,
                         },
-                        codeActions = {
-                            ForceStable = true, -- CRITICAL: Keeps actions visible
-                        },
+                        codeActions = { ForceStable = true },
                         diagnosticSeverity = "hint",
                     },
                 },
@@ -134,7 +130,34 @@ return {
         end,
     },
 
-    -- Advanced Syntax Highlighting
+    -- CMake Support (Professional C++ Development)
+    -- This makes Neovim behave like CLion/VS.
+    {
+        "Civitasv/cmake-tools.nvim",
+        dependencies = { "nvim-lua/plenary.nvim" },
+        opts = {
+            cmake_command = "cmake",
+            cmake_build_directory = "build/${variant:buildType}", -- Logic for Release/Debug splits
+            cmake_generate_options = { "-DCMAKE_EXPORT_COMPILE_COMMANDS=1" },
+            cmake_build_options = {},
+            cmake_console_size = 10,
+            cmake_show_console = "always",
+            cmake_dap_configuration = { name = "cpp", type = "lldb", request = "launch" },
+            cmake_variants_message = {
+                short = { show = true },
+                long = { show = true, max_length = 40 },
+            },
+        },
+    },
+
+    -- Advanced Refactoring (Extract Function, Inline Variable, etc.)
+    {
+        "ThePrimeagen/refactoring.nvim",
+        dependencies = { "nvim-lua/plenary.nvim", "nvim-treesitter/nvim-treesitter" },
+        opts = {},
+    },
+
+    -- Treesitter
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -144,10 +167,7 @@ return {
                 "bash", "json", "lua", "markdown", "markdown_inline",
                 "python", "regex", "vim", "cpp", "c", "vimdoc",
             },
-            highlight = { 
-                enable = true,
-                additional_vim_regex_highlighting = false,
-            },
+            highlight = { enable = true, additional_vim_regex_highlighting = false },
             indent = { enable = true },
         },
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
@@ -160,7 +180,7 @@ return {
         opts = { mode = "cursor", max_lines = 3 },
     },
 
-    -- Universal Documentation Generator (Neogen)
+    -- Documentation Generator (Neogen)
     {
         "danymat/neogen",
         cmd = "Neogen",
@@ -216,7 +236,7 @@ return {
         opts = { modes = { lsp = { win = { position = "right" } } } },
     },
 
-    -- Best TODO Plugin: Todo-comments.nvim
+    -- Todo comments
     {
         "folke/todo-comments.nvim",
         event = { "BufReadPost", "BufNewFile" },

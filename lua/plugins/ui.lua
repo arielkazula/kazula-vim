@@ -63,7 +63,6 @@ return {
         dependencies = { "kevinhwang91/promise-async" },
         event = "BufReadPost",
         init = function()
-            -- FIXED: Set foldcolumn to '0' to remove the number showing on each line
             vim.o.foldcolumn = '0' 
             vim.o.foldlevel = 99
             vim.o.foldlevelstart = 99
@@ -74,6 +73,14 @@ return {
                 return {'treesitter', 'indent'}
             end
         },
+    },
+
+    -- Git Conflict Resolution UI
+    -- Provides high-visibility markers and one-key resolution for merge conflicts.
+    {
+        "akinsho/git-conflict.nvim",
+        version = "*",
+        config = true,
     },
 
     -- Gitsigns
