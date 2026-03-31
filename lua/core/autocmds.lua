@@ -49,19 +49,3 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     end
   end,
 })
-
--- 4. Clangd Index Directory Fix ------------------------------------------
--- Proactively create the .cache/clangd/index directory.
-vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
-  group = augroup("clangd_cache_fix"),
-  pattern = { "*.c", "*.cpp", "*.cc", "*.h", "*.hpp", "*.objc", "*.objcpp" },
-  callback = function()
-    local root = vim.fs.root(0, { ".git", "compile_commands.json", "build" })
-    if root then
-      local cache_dir = root .. "/.cache/clangd/index"
-      if vim.fn.isdirectory(cache_dir) == 0 then
-        pcall(function() vim.fn.mkdir(cache_dir, "p") end)
-      end
-    end
-  end,
-})

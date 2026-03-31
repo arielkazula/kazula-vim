@@ -51,10 +51,16 @@ return {
                     "configure.ac", ".git",
                 },
                 cmd = {
-                    "clangd", "-j=4", "--background-index", "--clang-tidy",
-                    "--completion-style=detailed", "--header-insertion=never",
-                    "--fallback-style=llvm", "--offset-encoding=utf-16",
-                    "--function-arg-placeholders=true", "--enable-config",
+                    "clangd",
+                    "-j=4",
+                    "--background-index=false", -- DISABLING to prevent shard write errors
+                    "--clang-tidy",
+                    "--completion-style=detailed",
+                    "--header-insertion=never",
+                    "--fallback-style=llvm",
+                    "--offset-encoding=utf-16",
+                    "--function-arg-placeholders=true",
+                    "--enable-config",
                 },
             })
 
@@ -76,12 +82,10 @@ return {
                         dialect = "American",
                         linters = {
                             spell_check = true,
-                            -- Disable noisy/aggressive grammar rules for code
                             SentenceCapitalization = false,
                             LongSentences = false,
                             SpelledNumbers = false,
                         },
-                        -- Set to hint so it doesn't look like an actual error
                         diagnosticSeverity = "hint",
                     },
                 },
