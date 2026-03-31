@@ -51,10 +51,19 @@ return {
                     "configure.ac", ".git",
                 },
                 cmd = {
-                    "clangd", "-j=4", "--background-index", "--background-index-priority=background",
-                    "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
-                    "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
-                    "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
+                    "clangd",
+                    "-j=4",
+                    "--background-index",
+                    "--clang-tidy",
+                    "--all-scopes-completion",
+                    "--completion-style=detailed",
+                    "--header-insertion=never",
+                    "--fallback-style=llvm",
+                    "--offset-encoding=utf-16",
+                    "--function-arg-placeholders=true",
+                    "--enable-config",
+                    "--malloc-trim",
+                    "--pch-storage=disk",
                     "--extra-arg=-Wno-unreachable-code",
                 },
             })
@@ -69,11 +78,10 @@ return {
                 },
             })
 
-            -- Refined Harper configuration to fix "Add to dictionary" visibility
+            -- Specialized Harper configuration
             vim.lsp.config("harper_ls", {
                 settings = {
                     ["harper-ls"] = {
-                        -- Ensure absolute path for the dictionary
                         userDictPath = vim.fn.expand(vim.fn.getcwd() .. "/spell/dictionary.txt"),
                         dialect = "American",
                         linters = {
@@ -82,9 +90,7 @@ return {
                             LongSentences = false,
                             SpelledNumbers = false,
                         },
-                        codeActions = {
-                            ForceStable = true, -- REQUIRED: Ensures "Add to dictionary" is shown
-                        },
+                        codeActions = { ForceStable = true },
                         diagnosticSeverity = "hint",
                     },
                 },
