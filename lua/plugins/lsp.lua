@@ -64,7 +64,6 @@ return {
                     "--enable-config",
                     "--malloc-trim",
                     "--pch-storage=disk",
-                    "--extra-arg=-Wno-unreachable-code",
                 },
             })
 
