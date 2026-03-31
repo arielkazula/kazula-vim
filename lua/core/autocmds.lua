@@ -51,8 +51,8 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 })
 
 -- 4. Clangd Index Directory Fix ------------------------------------------
--- Proactively create the .cache/clangd/index directory to prevent 
--- shard write errors on Linux.
+-- Proactively create the .cache/clangd/index directory.
+-- Wrapped in pcall to prevent crashes on read-only filesystems.
 vim.api.nvim_create_autocmd("FileType", {
   group = augroup("clangd_cache_fix"),
   pattern = { "c", "cpp", "objc", "objcpp" },
@@ -61,7 +61,8 @@ vim.api.nvim_create_autocmd("FileType", {
     if root then
       local cache_dir = root .. "/.cache/clangd/index"
       if vim.fn.isdirectory(cache_dir) == 0 then
-        vim.fn.mkdir(cache_dir, "p")
+        -- pcall ensures we don't error out if we lack write permissions
+        pcall(function() vim.fn.mkdir(cache_dir, "p") end)
       end
     end
   end,

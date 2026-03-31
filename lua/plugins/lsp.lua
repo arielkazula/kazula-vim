@@ -28,7 +28,6 @@ return {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            -- Disable automatic_enable so we can use a safe wrapper
             automatic_enable = false,
         },
         config = function(_, opts)
@@ -38,14 +37,14 @@ return {
             local capabilities = require("blink.cmp").get_lsp_capabilities()
             capabilities.offsetEncoding = { "utf-16" }
 
-            -- Set global defaults for ALL servers
+            -- Set global defaults
             if vim.lsp.config then
                 vim.lsp.config("*", { capabilities = capabilities })
             end
 
-            -- Server-specific overrides using native vim.lsp.config
-            -- We use 'root_markers' which is the 0.11+ way to define project roots.
+            -- Server-specific overrides
             vim.lsp.config("clangd", {
+                filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
                 root_markers = { ".git", "compile_commands.json", "build", "CMakeLists.txt" },
                 cmd = {
                     "clangd", "-j=4", "--background-index", "--clang-tidy",
@@ -65,24 +64,19 @@ return {
                 },
             })
 
-            -- A safe enabler that ignores oil:// and other non-file buffers
-            -- to prevent the "File URL host" error on Linux.
+            -- Safe enabler: ignores non-file buffers (like oil://)
             local function safe_enable(server)
                 vim.api.nvim_create_autocmd("FileType", {
                     pattern = "*",
                     callback = function(args)
-                        local buf = args.buf
-                        local uri = vim.uri_from_bufnr(buf)
-                        if not uri:match("^file://") then
-                            return
+                        local uri = vim.uri_from_bufnr(args.buf)
+                        if uri:match("^file://") then
+                            vim.lsp.enable(server)
                         end
-                        -- Only enable if the server supports this filetype (logic handled by core)
-                        vim.lsp.enable(server)
                     end,
                 })
             end
 
-            -- Enable all installed servers safely
             for _, server in ipairs(mlsp.get_installed_servers()) do
                 safe_enable(server)
             end
@@ -104,7 +98,8 @@ return {
         end,
     },
 
-    -- Treesitter
+    -- Advanced Syntax Highlighting (Treesitter)
+    -- This provides the colors/highlights for your code.
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -114,10 +109,15 @@ return {
                 "bash", "json", "lua", "markdown", "markdown_inline",
                 "python", "regex", "vim", "cpp", "c", "vimdoc",
             },
-            highlight = { enable = true },
+            highlight = { 
+                enable = true,
+                additional_vim_regex_highlighting = false,
+            },
             indent = { enable = true },
         },
-        config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
+        config = function(_, opts) 
+            require("nvim-treesitter.configs").setup(opts) 
+        end,
     },
 
     -- Sticky context header
