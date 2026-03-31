@@ -4,7 +4,6 @@
 
 return {
     -- Sophisticated task runner (Overseer)
-    -- Automates Python execution, C++ builds, and Docker tasks.
     {
         "stevearc/overseer.nvim",
         cmd = { "OverseerRun", "OverseerToggle", "OverseerInfo", "OverseerBuild" },
@@ -18,7 +17,6 @@ return {
     },
 
     -- Lightweight and fast formatter (Conform.nvim)
-    -- Replaces heavy tools like null-ls with native Lua-based formatting.
     {
         "stevearc/conform.nvim",
         event = "BufWritePre",
@@ -35,21 +33,16 @@ return {
     },
 
     -- Powerful project-wide find and replace (Grug-Far)
-    -- Replaces Spectre with a better UI that uses an editable buffer.
     {
         "magicduck/grug-far.nvim",
         cmd = "GrugFar",
-        opts = {
-            headerMaxWidth = 80,
-            transient = true, -- Close automatically after use
-        },
+        opts = { headerMaxWidth = 80, transient = true },
     },
 
     -- Simple and reliable session management (Persistence.nvim)
-    -- Automatically saves and restores your workspace state.
     {
         "folke/persistence.nvim",
-        event = "BufReadPre", -- only load if we open a file
+        event = "BufReadPre",
         opts = { options = { "buffers", "curdir", "tabpages", "winsize" } },
     },
 
@@ -60,13 +53,52 @@ return {
         opts = { highlight = { duration = 500 } },
     },
 
-    -- Utilities
+    -- Lag-free mode switching (better-escape.nvim)
+    -- Allows using 'jk' or 'jj' to exit insert mode instantly.
+    {
+        "max397574/better-escape.nvim",
+        event = "InsertEnter",
+        opts = {
+            timeout = 200,
+            default_mappings = true,
+            mappings = {
+                i = { j = { k = "<Esc>", j = "<Esc>" } },
+                c = { j = { k = "<Esc>", j = "<Esc>" } },
+                t = { j = { k = "<C-\><C-n>", j = "<C-\><C-n>" } },
+                v = { j = { k = "<Esc>", j = "<Esc>" } },
+                s = { j = { k = "<Esc>", j = "<Esc>" } },
+            },
+        },
+    },
+
+    -- Enhanced increment/decrement (dial.nvim)
+    -- Toggles true/false, increments dates, hex colors, and more with <C-a>/<C-x>.
+    {
+        "monaqa/dial.nvim",
+        keys = {
+            { "<C-a>", function() return require("dial.map").inc_normal() end, expr = true, desc = "Increment" },
+            { "<C-x>", function() return require("dial.map").dec_normal() end, expr = true, desc = "Decrement" },
+        },
+        config = function()
+            local augend = require("dial.augend")
+            require("dial.config").augends:register_group({
+                default = {
+                    augend.integer.alias.decimal,
+                    augend.integer.alias.hex,
+                    augend.date.alias["%Y/%m/%d"],
+                    augend.constant.alias.bool,
+                    augend.semver.alias.semver,
+                },
+            })
+        end,
+    },
+
+    -- Utilities (mini.nvim)
     {
         "echasnovski/mini.nvim",
         version = "*",
         event = "VeryLazy",
         config = function()
-            -- Surround: Add/Delete/Replace brackets/quotes (gs mappings)
             require("mini.surround").setup({
                 mappings = {
                     add = "gsa", delete = "gsd", find = "gsf",
@@ -74,7 +106,6 @@ return {
                     replace = "gsr", update_n_lines = "gsn",
                 },
             })
-            -- Move: Move lines/selections with Meta+hjkl
             require("mini.move").setup({
                 mappings = {
                     left = "", right = "",

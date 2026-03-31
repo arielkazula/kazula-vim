@@ -30,6 +30,17 @@ wk.add({
     { "R", function() require("flash").treesitter_search() end, mode = { "o", "x" }, desc = "Treesitter Search" },
     { "<c-s>", function() require("flash").toggle() end, mode = "c", desc = "Toggle Flash Search" },
 
+    -- Smart Splits (Directional Navigation & Resizing)
+    { "<C-h>", function() require('smart-splits').move_cursor_left() end, desc = "Go to Left Split" },
+    { "<C-j>", function() require('smart-splits').move_cursor_down() end, desc = "Go to Down Split" },
+    { "<C-k>", function() require('smart-splits').move_cursor_up() end, desc = "Go to Up Split" },
+    { "<C-l>", function() require('smart-splits').move_cursor_right() end, desc = "Go to Right Split" },
+    { "<leader>wr", group = "resize" },
+    { "<leader>wrh", function() require('smart-splits').resize_left() end, desc = "Resize Left" },
+    { "<leader>wrj", function() require('smart-splits').resize_down() end, desc = "Resize Down" },
+    { "<leader>wrk", function() require('smart-splits').resize_up() end, desc = "Resize Up" },
+    { "<leader>wrl", function() require('smart-splits').resize_right() end, desc = "Resize Right" },
+
     -- Core / General
     { "<leader><Bar>", ":vsplit<cr>", desc = "Split Screen Vertical" },
     { "<leader>_ ", ":split<cr>", desc = "Split Screen Horizontal" },
@@ -51,7 +62,6 @@ wk.add({
     { "<leader>x", group = "diagnostics/quickfix", icon = { icon = "󱖫 ", color = "green" } },
     { "[", group = "prev" },
     { "]", group = "next" },
-    { "g", group = "goto" },
 
     -- File / Find (FZF-Lua & Oil.nvim)
     { "<leader><leader>", function() require("fzf-lua").files() end, desc = "Find Files (FZF)" },
@@ -73,9 +83,13 @@ wk.add({
 
     -- Code / LSP
     { "gd", "<cmd>FzfLua lsp_definitions jump1=true ignore_current_line=true<cr>", desc = "Goto Definition" },
-    { "gr", "<cmd>FzfLua lsp_references jump1=true ignore_current_line=true<cr>", desc = "References" },
-    { "gI", "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>", desc = "Goto Implementation" },
+    { "grr", "<cmd>FzfLua lsp_references jump1=true ignore_current_line=true<cr>", desc = "References (FZF)" },
+    { "gri", "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>", desc = "Goto Implementation" },
     { "gy", "<cmd>FzfLua lsp_typedefs jump1=true ignore_current_line=true<cr>", desc = "Goto Type Definition" },
+    { "gra", "<cmd>FzfLua lsp_code_actions<cr>", desc = "Code Action (FZF)" },
+    { "grn", vim.lsp.buf.rename, desc = "Rename (LSP)" },
+    
+    -- Legacy / Leader-based LSP (for muscle memory)
     { "K", function() vim.lsp.buf.hover() end, desc = "LSP Hover Docs" },
     { "<leader>cd", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
     { "<leader>cr", vim.lsp.buf.rename, desc = "Rename (LSP)" },

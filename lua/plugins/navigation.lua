@@ -11,25 +11,22 @@ return {
     opts = {},
     config = function(_, opts)
       require("fzf-lua").setup(opts)
-      require("fzf-lua").register_ui_select() -- Make fzf handle vim.ui.select
+      require("fzf-lua").register_ui_select()
     end,
   },
 
   -- Jump anywhere on the screen with 's' (Flash.nvim)
-  -- Replaces standard / and ? search with a faster jumping mechanism.
   {
     "folke/flash.nvim",
     event = "VeryLazy",
     opts = {
-      labels = "asdfghjklqwertyuiopzxcvbnm", -- Keys to use for jump markers
-      search = { mode = "search" },          -- Integration with regular search
-      modes = {
-        char = { enabled = true },           -- Enhance f, F, t, T motions
-      },
+      labels = "asdfghjklqwertyuiopzxcvbnm",
+      search = { mode = "search" },
+      modes = { char = { enabled = true } },
     },
   },
 
-  -- Floating file explorer that lets you edit your filesystem as a buffer
+  -- Floating file explorer (Oil.nvim)
   {
     "stevearc/oil.nvim",
     cmd = "Oil",
@@ -41,6 +38,17 @@ return {
       skip_confirm_for_simple_edits = true,
       float = { border = "rounded" },
       view_options = { show_hidden = true },
+    },
+  },
+
+  -- Intuitive split management (smart-splits.nvim)
+  -- Navigates seamlessly between splits and supports resizing with Meta keys.
+  {
+    "mrjones2014/smart-splits.nvim",
+    lazy = false,
+    opts = {
+        ignored_filetypes = { 'nofile', 'quickfix', 'qf', 'prompt' },
+        ignored_buftypes = { 'nofile' },
     },
   },
 }
