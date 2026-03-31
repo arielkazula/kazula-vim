@@ -19,7 +19,7 @@ return {
         end,
     },
 
-    -- 2. Mason-LSPConfig
+    -- 2. Mason-LSPConfig: Bridges Mason with native LSP
     {
         "williamboman/mason-lspconfig.nvim",
         dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
@@ -37,15 +37,17 @@ return {
             local capabilities = require("blink.cmp").get_lsp_capabilities()
             capabilities.offsetEncoding = { "utf-16" }
 
-            -- ROBUST GUARD: Set global defaults for ALL servers.
-            -- This returns nil for any non-file URI (like oil://), preventing 
-            -- the "File URL host" error on Linux before it even starts.
+            -- Set global defaults using Neovim 0.11 API
             if vim.lsp.config then
-                vim.lsp.config("*", { 
+                vim.lsp.config("*", {
                     capabilities = capabilities,
-                    root_dir = function(path)
-                        if path:match("^%w+://") then return nil end
-                        return nil -- fallback to default detection
+                    -- FIX: 'buf' is a number (bufnr) in the 0.11 root_dir function
+                    root_dir = function(buf)
+                        local uri = vim.uri_from_bufnr(buf)
+                        if uri:match("^%w+://") and not uri:match("^file://") then
+                            return nil -- Ignore non-file URIs like oil://
+                        end
+                        return nil -- Fallback to default marker detection
                     end,
                 })
             end
@@ -59,10 +61,21 @@ return {
                     "configure.ac", ".git",
                 },
                 cmd = {
-                    "clangd", "-j=4", "--background-index", "--background-index-priority=background",
-                    "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
-                    "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
-                    "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
+                    "clangd",
+                    "-j=4",
+                    "--background-index",
+                    "--background-index-priority=background",
+                    "--clang-tidy",
+                    "--all-scopes-completion",
+                    "--completion-style=detailed",
+                    "--header-insertion=never",
+                    "--fallback-style=llvm",
+                    "--offset-encoding=utf-16",
+                    "--function-arg-placeholders=true",
+                    "--enable-config",
+                    "--malloc-trim",
+                    "--pch-storage=disk",
+                    "--extra-arg=-Wno-unreachable-code",
                 },
             })
 
@@ -93,14 +106,15 @@ return {
                 },
             })
 
-            -- Safer enable logic
+            -- Safe enabler: ignores non-file buffers (like oil://)
             local function safe_enable(server)
                 vim.api.nvim_create_autocmd("FileType", {
                     pattern = "*",
                     callback = function(args)
                         local uri = vim.uri_from_bufnr(args.buf)
-                        if not uri:match("^file://") then return end
-                        vim.lsp.enable(server)
+                        if uri:match("^file://") then
+                            vim.lsp.enable(server)
+                        end
                     end,
                 })
             end
@@ -126,25 +140,6 @@ return {
         end,
     },
 
-    -- CMake Support
-    {
-        "Civitasv/cmake-tools.nvim",
-        lazy = false, -- Ensure commands are always available
-        opts = {
-            cmake_command = "cmake",
-            cmake_build_directory = "build/${variant:buildType}",
-            cmake_generate_options = { "-DCMAKE_EXPORT_COMPILE_COMMANDS=1" },
-            cmake_show_console = "always",
-        },
-    },
-
-    -- Advanced Refactoring
-    {
-        "ThePrimeagen/refactoring.nvim",
-        dependencies = { "nvim-lua/plenary.nvim", "nvim-treesitter/nvim-treesitter" },
-        opts = {},
-    },
-
     -- Treesitter
     {
         "nvim-treesitter/nvim-treesitter",
@@ -155,12 +150,16 @@ return {
                 "bash", "json", "lua", "markdown", "markdown_inline",
                 "python", "regex", "vim", "cpp", "c", "vimdoc",
             },
-            highlight = { enable = true, additional_vim_regex_highlighting = false },
+            highlight = { 
+                enable = true,
+                additional_vim_regex_highlighting = false,
+            },
             indent = { enable = true },
         },
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
+    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
@@ -206,6 +205,7 @@ return {
                 NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
                 TEST = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
             },
+            gui_style = { fg = "NONE", bg = "BOLD" },
             colors = {
                 error = { "DiagnosticError", "ErrorMsg", "#DC2626" },
                 warning = { "DiagnosticWarn", "WarningMsg", "#FBBF24" },
