@@ -43,7 +43,6 @@ return {
             end
 
             -- Server-specific overrides
-            -- Optimized Clangd configuration for 2025 (Large Projects)
             vim.lsp.config("clangd", {
                 filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "cc", "h" },
                 root_markers = {
@@ -53,20 +52,19 @@ return {
                 },
                 cmd = {
                     "clangd",
-                    "-j=4",                          -- worker threads
-                    "--background-index",            -- EXPLICITLY ON (Standard Practice)
+                    "-j=4",
+                    "--background-index",
                     "--background-index-priority=background",
                     "--clang-tidy",
-                    "--all-scopes-completion",       -- Better code suggestions
+                    "--all-scopes-completion",
                     "--completion-style=detailed",
-                    "--header-insertion=iwyu",       -- Best practice for includes
-                    "--header-insertion-decorators",
+                    "--header-insertion=never",      -- EXPLICITLY NEVER (Full manual control)
                     "--fallback-style=llvm",
                     "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true",
-                    "--enable-config",               -- Read .clangd files
-                    "--malloc-trim",                 -- Memory management (Linux)
-                    "--pch-storage=disk",            -- Scale for large projects
+                    "--enable-config",
+                    "--malloc-trim",
+                    "--pch-storage=disk",
                 },
             })
 
