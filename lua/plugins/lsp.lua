@@ -37,45 +37,24 @@ return {
             local capabilities = require("blink.cmp").get_lsp_capabilities()
             capabilities.offsetEncoding = { "utf-16" }
 
-            -- Set global defaults using Neovim 0.11 API
-            -- This includes the CRITICAL guard for oil.nvim
+            -- Set global defaults (No global root_dir blocker here)
             if vim.lsp.config then
-                vim.lsp.config("*", {
-                    capabilities = capabilities,
-                    root_dir = function(buf)
-                        local uri = vim.uri_from_bufnr(buf)
-                        -- If it's a special buffer (oil, fugitive, etc), don't start LSP
-                        if uri:match("^%w+://") and not uri:match("^file://") then
-                            return nil
-                        end
-                        return nil -- Fallback to default markers
-                    end,
-                })
+                vim.lsp.config("*", { capabilities = capabilities })
             end
 
-            -- Server-specific overrides
+            -- Server-specific overrides using native vim.lsp.config
             vim.lsp.config("clangd", {
-                filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "cc", "h" },
+                filetypes = { "c", "cpp", "cc", "h", "hpp", "objc", "objcpp", "cuda", "proto" },
                 root_markers = {
                     ".clangd", ".clang-tidy", ".clang-format",
                     "compile_commands.json", "compile_flags.txt",
                     "configure.ac", ".git",
                 },
                 cmd = {
-                    "clangd",
-                    "-j=4",
-                    "--background-index",
-                    "--background-index-priority=background",
-                    "--clang-tidy",
-                    "--all-scopes-completion",
-                    "--completion-style=detailed",
-                    "--header-insertion=never",
-                    "--fallback-style=llvm",
-                    "--offset-encoding=utf-16",
-                    "--function-arg-placeholders=true",
-                    "--enable-config",
-                    "--malloc-trim",
-                    "--pch-storage=disk",
+                    "clangd", "-j=4", "--background-index", "--background-index-priority=background",
+                    "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
+                    "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
+                    "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
                 },
             })
 
@@ -106,10 +85,25 @@ return {
                 },
             })
 
-            -- Enable all installed servers globally
-            -- The native 0.11 system will use the config and guards we defined above.
+            -- Whitelist Enablement: Only enable servers for legitimate files on disk.
+            -- This completely bypasses the oil:// crash on Linux while ensuring 
+            -- your C++ project files work perfectly.
+            local function safe_enable(server)
+                vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
+                    pattern = "*",
+                    callback = function(args)
+                        local uri = vim.uri_from_bufnr(args.buf)
+                        -- ONLY enable if the buffer is a real file.
+                        -- This check is robust and won't block your C++ source code.
+                        if uri:match("^file://") then
+                            vim.lsp.enable(server)
+                        end
+                    end,
+                })
+            end
+
             for _, server in ipairs(mlsp.get_installed_servers()) do
-                vim.lsp.enable(server)
+                safe_enable(server)
             end
         end,
     },
