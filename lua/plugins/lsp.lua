@@ -54,6 +54,7 @@ return {
                     "clangd",
                     "-j=4",
                     "--background-index",
+                    "--background-index-priority=background",
                     "--clang-tidy",
                     "--all-scopes-completion",
                     "--completion-style=detailed",
@@ -64,6 +65,7 @@ return {
                     "--enable-config",
                     "--malloc-trim",
                     "--pch-storage=disk",
+                    "--extra-arg=-Wno-unreachable-code",
                 },
             })
 
@@ -192,18 +194,30 @@ return {
         opts = { modes = { lsp = { win = { position = "right" } } } },
     },
 
-    -- Todo comments
+    -- Best TODO Plugin: Todo-comments.nvim
     {
         "folke/todo-comments.nvim",
-        event = "BufReadPost",
+        event = { "BufReadPost", "BufNewFile" },
         dependencies = { "nvim-lua/plenary.nvim" },
         opts = {
             signs = true,
+            sign_priority = 8,
+            keywords = {
+                FIX = { icon = " ", color = "error", alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
+                TODO = { icon = " ", color = "info" },
+                HACK = { icon = " ", color = "warning" },
+                WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
+                PERF = { icon = " ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
+                NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
+                TEST = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
+            },
+            gui_style = { fg = "NONE", bg = "BOLD" },
             colors = {
                 error = { "DiagnosticError", "ErrorMsg", "#DC2626" },
                 warning = { "DiagnosticWarn", "WarningMsg", "#FBBF24" },
                 info = { "DiagnosticInfo", "#2563EB" },
                 hint = { "DiagnosticHint", "#10B981" },
+                default = { "Identifier", "#7C3AED" },
                 test = { "Identifier", "#FF00FF" },
             },
         },

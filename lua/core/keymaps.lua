@@ -43,7 +43,7 @@ wk.add({
     -- Group: [b]uffer
     { "<leader>b", group = "buffer", icon = { icon = "󰈙 ", color = "azure" }, expand = function() return require("which-key.extras").expand.buf() end },
 
-    -- Group: [c]ode (LSP, Formatting, Annotations)
+    -- Group: [c]ode
     { "<leader>c", group = "code", icon = { icon = "󰅩 ", color = "yellow" } },
     { "gd", "<cmd>FzfLua lsp_definitions jump1=true ignore_current_line=true<cr>", desc = "Goto Definition" },
     { "grr", "<cmd>FzfLua lsp_references jump1=true ignore_current_line=true<cr>", desc = "References (FZF)" },
@@ -60,7 +60,7 @@ wk.add({
     { "<leader>cs", function() require("fzf-lua").lsp_document_symbols() end, desc = "Document Symbols" },
     { "<leader>cf", function() require("conform").format({ async = true, lsp_fallback = true }) end, desc = "Format Buffer" },
 
-    -- Group: [f]ile (Find, Explorer)
+    -- Group: [f]ile
     { "<leader>f", group = "file", icon = { icon = "󰈞 ", color = "blue" } },
     { "<leader>ff", function() require("fzf-lua").files() end, desc = "Find Files" },
     { "<leader>fb", function() require("fzf-lua").buffers() end, desc = "Find Buffers" },
@@ -92,12 +92,13 @@ wk.add({
     { "<leader>rs", "<cmd>OverseerRun<CR>", desc = "Run Task" },
     { "<leader>rt", "<cmd>OverseerToggle<CR>", desc = "Toggle Task List" },
 
-    -- Group: [s]earch/replace
+    -- Group: [s]earch
     { "<leader>s", group = "search", icon = { icon = "󰍉 ", color = "cyan" } },
     { "<leader>sg", function() require("fzf-lua").live_grep() end, desc = "Live Grep" },
     { "<leader>sw", function() require("fzf-lua").grep_cword() end, desc = "Search Word" },
-    { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace (Grug-Far)" },
-    { "<leader>sf", ":RipSubstitute<cr>", desc = "Rip Substitute (Regex)" },
+    { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace" },
+    { "<leader>sf", ":RipSubstitute<cr>", desc = "Rip Substitute" },
+    { "<leader>st", "<cmd>TodoFzfLua<cr>", desc = "Search Project TODOs" }, -- NEW: Show all todos in project
 
     -- Group: [u]i
     { "<leader>u", group = "ui", icon = { icon = "󰙵 ", color = "cyan" } },
@@ -106,10 +107,11 @@ wk.add({
     { "<leader>uf", "za", desc = "Toggle Fold" },
     { "<leader>ul", "<cmd>LspRestart<cr>", desc = "Restart LSP" },
 
-    -- Group: [x] diagnostics/quickfix
+    -- Group: [x] diagnostics
     { "<leader>x", group = "diagnostics", icon = { icon = "󱖫 ", color = "green" } },
     { "<leader>xx", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics" },
     { "<leader>xX", "<cmd>Trouble diagnostics toggle<cr>", desc = "Workspace Diagnostics" },
+    { "<leader>xt", "<cmd>TodoTrouble<cr>", desc = "Project TODOs (Trouble)" }, -- NEW: View all todos in Trouble panel
     { "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Location List" },
     { "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List" },
 
