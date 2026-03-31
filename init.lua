@@ -1,11 +1,12 @@
 -- init.lua ---------------------------------------------------------------
--- Kick-start Neovim with lazy.nvim (no LazyVim).
+-- Kick-start Neovim with lazy.nvim.
+-- This configuration is modular, performant, and documented for 2025.
 
+-- Set leaders before any plugins are loaded
 vim.g.mapleader      = " "
 vim.g.maplocalleader = " "
 
-
--- ── bootstrap lazy.nvim ────────────────────────────────────────────────
+-- ── 1. Bootstrap lazy.nvim ──────────────────────────────────────────────
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({
@@ -15,12 +16,26 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-require("core.options")
--- Setup plugins (see plugins.lua for the plugin definitions)
+-- ── 2. Core Configurations ──────────────────────────────────────────────
+-- Load options, autocommands, and keymaps.
+require("core.options")   -- Basic editor settings
+require("core.autocmds")  -- Automated behaviors (yank highlight, etc.)
+
+-- ── 3. Plugin Setup ─────────────────────────────────────────────────────
+-- Setup plugins (located in lua/plugins/*.lua)
 require("lazy").setup("plugins", {
-  ui = { border = "rounded" },           -- nice border for Lazy UI
-  change_detection = { notify = false }, -- don't spam notifications on config change
+  ui = { border = "rounded" },           -- Use rounded borders for Lazy UI
+  change_detection = { notify = false }, -- Silently reload config on changes
+  performance = {
+    rtp = {
+      -- Disable unused built-in plugins for faster startup
+      disabled_plugins = {
+        "gzip", "matchit", "matchparen", "netrwPlugin",
+        "tarPlugin", "tohtml", "tutor", "zipPlugin",
+      },
+    },
+  },
 })
 
+-- Load global keymaps after plugins are initialized
 require("core.keymaps")
-require("core.lspOptions")
