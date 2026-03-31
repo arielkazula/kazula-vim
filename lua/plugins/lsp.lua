@@ -1,9 +1,9 @@
 -- lua/plugins/lsp.lua ----------------------------------------------------
 -- This file manages the Language Server Protocol (LSP) and Treesitter 
--- (syntax highlighting) integration using the modern v2.0+ APIs.
+-- (syntax highlighting) integration.
 
 return {
-    -- 1. Mason: The external tool manager
+    -- 1. Mason: Tool management
     {
         "williamboman/mason.nvim",
         cmd = "Mason",
@@ -12,7 +12,6 @@ return {
         config = function(_, opts)
             require("mason").setup(opts)
             local mr = require("mason-registry")
-            -- tools to ensure are installed
             local packages = { "clang-format", "jq", "black", "codespell", "shfmt", "stylua" }
             for _, tool in ipairs(packages) do
                 local p = mr.get_package(tool)
@@ -21,41 +20,56 @@ return {
         end,
     },
 
-    -- 2. Mason-LSPConfig: Bridges Mason with Neovim's LSP
+    -- 2. Mason-LSPConfig: Bridges Mason with lspconfig
     {
         "williamboman/mason-lspconfig.nvim",
-        dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
+        dependencies = { "williamboman/mason.nvim" },
         opts = {
             ensure_installed = {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            automatic_enable = true,
+            -- We handle configuration manually via lspconfig for better control
+            automatic_enable = false,
         },
-        config = function(_, opts)
+    },
+
+    -- 3. Core LSP Configuration (nvim-lspconfig)
+    {
+        "neovim/nvim-lspconfig",
+        event = { "BufReadPre", "BufNewFile" },
+        dependencies = { 
+            "saghen/blink.cmp", 
+            "p00f/clangd_extensions.nvim",
+            "williamboman/mason-lspconfig.nvim",
+        },
+        config = function()
+            local lspconfig = require("lspconfig")
             local capabilities = require("blink.cmp").get_lsp_capabilities()
 
-            -- Fix Position Encodings Warning
-            capabilities.offsetEncoding = { "utf-16" }
+            -- Rounded borders for floating windows
+            vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
+            vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
 
-            -- Specialized configuration for Clangd (C++)
-            local clangd_config = {
-                capabilities = capabilities,
-                cmd = {
-                    "clangd",
-                    "-j=4",
-                    "--background-index",
-                    "--clang-tidy",
-                    "--completion-style=detailed",
-                    "--header-insertion=never",
-                    "--fallback-style=llvm",
-                    "--offset-encoding=utf-16",
-                    "--function-arg-placeholders=true", -- FIX: requires boolean value
+            -- Specialized Clangd (C++) configuration
+            -- Relying on lspconfig's default root_dir and URI handling for stability.
+            require("clangd_extensions").setup({
+                server = {
+                    capabilities = capabilities,
+                    cmd = {
+                        "clangd",
+                        "--background-index",
+                        "--clang-tidy",
+                        "--completion-style=detailed",
+                        "--header-insertion=iwyu",
+                        "--fallback-style=llvm",
+                        "--offset-encoding=utf-16", -- Required for many clients to align with clangd
+                    },
                 },
-            }
+            })
 
-            -- Specialized configuration for Lua
-            local lua_config = {
+            -- Specialized Lua configuration
+            lspconfig.lua_ls.setup({
                 capabilities = capabilities,
                 settings = {
                     Lua = {
@@ -63,38 +77,29 @@ return {
                         workspace = { checkThirdParty = false },
                     },
                 },
-            }
+            })
 
-            -- Apply configurations
-            if vim.lsp.config then
-                vim.lsp.config("*", { capabilities = capabilities })
-                vim.lsp.config("clangd", clangd_config)
-                vim.lsp.config("lua_ls", lua_config)
-            else
-                local lspconfig = require("lspconfig")
-                lspconfig.clangd.setup(clangd_config)
-                lspconfig.lua_ls.setup(lua_config)
-                lspconfig.util.default_config = vim.tbl_extend("force", lspconfig.util.default_config, {
-                    capabilities = capabilities,
-                })
+            -- Optimized Harper (Grammar/Spell Check)
+            lspconfig.harper_ls.setup({
+                capabilities = capabilities,
+                settings = {
+                    ["harper-ls"] = { linters = { spell_check = true } },
+                },
+            })
+
+            -- Default setup for other servers managed by Mason
+            local mlsp = require("mason-lspconfig")
+            for _, server in ipairs(mlsp.get_installed_servers()) do
+                if server ~= "clangd" and server ~= "lua_ls" and server ~= "harper_ls" then
+                    lspconfig[server].setup({
+                        capabilities = capabilities,
+                    })
+                end
             end
-
-            require("mason-lspconfig").setup(opts)
         end,
     },
 
-    -- 3. Core LSP Plugin
-    {
-        "neovim/nvim-lspconfig",
-        event = { "BufReadPre", "BufNewFile" },
-        dependencies = { "saghen/blink.cmp", "p00f/clangd_extensions.nvim" },
-        config = function()
-            vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
-            vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
-        end,
-    },
-
-    -- Treesitter
+    -- Treesitter: Syntax Highlighting
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -110,13 +115,14 @@ return {
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
+    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
         opts = { mode = "cursor", max_lines = 3 },
     },
 
-    -- Documentation (Neogen)
+    -- Documentation Generator (Neogen)
     {
         "danymat/neogen",
         cmd = "Neogen",
