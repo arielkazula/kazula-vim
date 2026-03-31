@@ -47,31 +47,41 @@ return {
             local lspconfig = require("lspconfig")
             local capabilities = require("blink.cmp").get_lsp_capabilities()
 
+            -- Fix Position Encodings Warning
+            -- Force all clients to support UTF-16 to match clangd's preference
+            capabilities.offsetEncoding = { "utf-16" }
+
             -- Rounded borders for LSP documentation windows
             vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
             vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
 
-            require("mason-lspconfig").setup_handlers({
+            -- Ensure mason-lspconfig is loaded and initialized before setting handlers
+            local mlsp = require("mason-lspconfig")
+            
+            -- We call setup explicitly here because we are in the config of nvim-lspconfig
+            -- and need to make sure the handlers are registered correctly.
+            mlsp.setup() 
+
+            mlsp.setup_handlers({
                 -- Default handler for most servers
                 function(server_name)
                     lspconfig[server_name].setup({ capabilities = capabilities })
                 end,
 
                 -- Specialized Clangd (C++) configuration
-                -- Uses performance-oriented flags to prevent lag on large projects.
                 ["clangd"] = function()
                     require("clangd_extensions").setup({
                         server = {
                             capabilities = capabilities,
                             cmd = {
                                 "clangd",
-                                "-j=4",                       -- Background workers count
+                                "-j=4",
                                 "--background-index",
                                 "--clang-tidy",
                                 "--completion-style=detailed",
                                 "--header-insertion=never",
                                 "--fallback-style=llvm",
-                                "--offset-encoding=utf-16",    -- Neovim friendly encoding
+                                "--offset-encoding=utf-16",
                                 "--function-arg-placeholders",
                             },
                         },
@@ -96,7 +106,6 @@ return {
     },
 
     -- Advanced Syntax Highlighting (Treesitter)
-    -- Provides faster and more accurate highlighting than traditional regex.
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -120,7 +129,6 @@ return {
     },
 
     -- Documentation Generator (Neogen)
-    -- Generates Doxygen/JSDoc style comments with one command.
     {
         "danymat/neogen",
         cmd = "Neogen",
@@ -151,7 +159,6 @@ return {
     },
 
     -- Improved Diagnostic & Quickfix UI (Trouble.nvim)
-    -- Provides a dedicated panel to browse all project errors and symbols.
     {
         "folke/trouble.nvim",
         cmd = { "Trouble" },
