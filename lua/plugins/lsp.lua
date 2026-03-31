@@ -22,7 +22,7 @@ return {
 
     {
         "williamboman/mason-lspconfig.nvim",
-        dependencies = "williamboman/mason.nvim",
+        dependencies = { "williamboman/mason.nvim", "neovim/nvim-lspconfig" },
         opts = {
             ensure_installed = {
                 "clangd", "bashls", "pyright", "cmake",
@@ -30,45 +30,29 @@ return {
             },
             automatic_installation = true,
         },
-    },
-
-    -- Core LSP Configuration
-    -- Configures how Neovim talks to language servers for completion, diagnostics, etc.
-    {
-        "neovim/nvim-lspconfig",
-        event = { "BufReadPre", "BufNewFile" },
-        dependencies = {
-            "williamboman/mason.nvim",
-            "williamboman/mason-lspconfig.nvim",
-            "p00f/clangd_extensions.nvim", -- Enhanced C++ support
-            "saghen/blink.cmp",            -- Completion capabilities
-        },
-        config = function()
+        config = function(_, opts)
             local lspconfig = require("lspconfig")
-            local capabilities = require("blink.cmp").get_lsp_capabilities()
+            local mlsp = require("mason-lspconfig")
+            local blink = require("blink.cmp")
+            
+            -- Initialize mason-lspconfig with the options
+            mlsp.setup(opts)
 
-            -- Fix Position Encodings Warning
-            -- Force all clients to support UTF-16 to match clangd's preference
+            -- Get capabilities from blink.cmp
+            local capabilities = blink.get_lsp_capabilities()
+
+            -- IMPORTANT: Fix Position Encodings Warning
+            -- Force UTF-16 to avoid conflicts between clangd and other servers.
             capabilities.offsetEncoding = { "utf-16" }
 
-            -- Rounded borders for LSP documentation windows
-            vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
-            vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
-
-            -- Ensure mason-lspconfig is loaded and initialized before setting handlers
-            local mlsp = require("mason-lspconfig")
-            
-            -- We call setup explicitly here because we are in the config of nvim-lspconfig
-            -- and need to make sure the handlers are registered correctly.
-            mlsp.setup() 
-
+            -- Define how each server should be set up
             mlsp.setup_handlers({
-                -- Default handler for most servers
+                -- Default handler
                 function(server_name)
                     lspconfig[server_name].setup({ capabilities = capabilities })
                 end,
 
-                -- Specialized Clangd (C++) configuration
+                -- Optimized Clangd setup
                 ["clangd"] = function()
                     require("clangd_extensions").setup({
                         server = {
@@ -89,7 +73,7 @@ return {
                     })
                 end,
 
-                -- Lua Language Server (tuned for Neovim config development)
+                -- Optimized Lua setup
                 ["lua_ls"] = function()
                     lspconfig.lua_ls.setup({
                         capabilities = capabilities,
@@ -102,6 +86,18 @@ return {
                     })
                 end,
             })
+        end,
+    },
+
+    -- Core LSP Plugin
+    {
+        "neovim/nvim-lspconfig",
+        event = { "BufReadPre", "BufNewFile" },
+        dependencies = { "saghen/blink.cmp", "p00f/clangd_extensions.nvim" },
+        config = function()
+            -- Rounded borders for LSP documentation windows
+            vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
+            vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
         end,
     },
 
