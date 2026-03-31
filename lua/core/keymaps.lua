@@ -160,7 +160,7 @@ wk.add({
     { "<leader>ul", "<cmd>LspRestart<cr>", desc = "Restart LSP" },
     { "<leader>un", function() Snacks.notifier.show_history() end, desc = "Notification History" },
     { "<leader>ud", function() Snacks.dashboard.open() end, desc = "Open Dashboard" },
-    { "<leader>uf", "<cmd>UfoToggle<cr>", desc = "Toggle Folding" },
+    { "<leader>uf", "za", desc = "Toggle Folding (UFO)" }, -- FIXED: Replaced invalid command with 'za'
     { "gx", desc = "Open with system app" },
     
     -- UFO Folding specific (Non-leader)

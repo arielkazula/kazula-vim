@@ -11,7 +11,8 @@ return {
         config = function(_, opts)
             require("mason").setup(opts)
             local mr = require("mason-registry")
-            local packages = { "clang-format", "jq", "black", "codespell", "shfmt", "stylua" }
+            -- Removed stylua from auto-install due to GLIBC compatibility issues on older Linux
+            local packages = { "clang-format", "jq", "black", "codespell", "shfmt" }
             for _, tool in ipairs(packages) do
                 local p = mr.get_package(tool)
                 if not p:is_installed() then p:install() end
@@ -65,7 +66,6 @@ return {
                     "--enable-config",
                     "--malloc-trim",
                     "--pch-storage=disk",
-                    -- GLOBAL SUPPRESSION: Disables unreachable code warnings
                     "--extra-arg=-Wno-unreachable-code",
                 },
             })

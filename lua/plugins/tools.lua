@@ -22,7 +22,7 @@ return {
         event = "BufWritePre",
         opts = {
             formatters_by_ft = {
-                lua = { "stylua" },
+                lua = { "lua-format" }, -- Replaced stylua with lua-format
                 python = { "black" },
                 cpp = { "clang-format" },
                 c = { "clang-format" },
@@ -40,7 +40,6 @@ return {
     },
 
     -- Single-tab Git Diff interface (Diffview.nvim)
-    -- Essential for reviewing complex changes and merge conflicts.
     {
         "sindrets/diffview.nvim",
         cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory" },

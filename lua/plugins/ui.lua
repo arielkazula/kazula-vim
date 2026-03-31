@@ -34,8 +34,7 @@ return {
         },
     },
 
-    -- Experimental: Modernize the Command Line, Messages, and Popupmenu
-    -- Replaces the bottom command line with a floating prompt.
+    -- Modernized Command Line and Notifications (Noice)
     {
         "folke/noice.nvim",
         event = "VeryLazy",
@@ -59,14 +58,13 @@ return {
     },
 
     -- High-performance folding (nvim-ufo)
-    -- Makes folding as pretty and fast as VS Code.
     {
         "kevinhwang91/nvim-ufo",
         dependencies = { "kevinhwang91/promise-async" },
         event = "BufReadPost",
         init = function()
-            -- Fold settings needed for ufo
-            vim.o.foldcolumn = '1'
+            -- FIXED: Set foldcolumn to '0' to remove the number showing on each line
+            vim.o.foldcolumn = '0' 
             vim.o.foldlevel = 99
             vim.o.foldlevelstart = 99
             vim.o.foldenable = true
