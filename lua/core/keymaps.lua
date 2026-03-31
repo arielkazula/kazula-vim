@@ -38,6 +38,39 @@ function CopyFilePathAndLine()
     print("Copied: " .. result)
 end
 
+-- Function to jump to the next error using Trouble.nvim if open, else LSP
+function goto_next_warning()
+    vim.diagnostic.goto_next({
+        severity = vim.diagnostic.severity.WARN,
+        wrap = true, -- wrap around file
+    })
+end
+
+-- Function to jump to the previous error
+function goto_prev_warning()
+    vim.diagnostic.goto_prev({
+        severity = vim.diagnostic.severity.WARN,
+        wrap = true,
+    })
+end
+
+-- Function to jump to the next error using Trouble.nvim if open, else LSP
+function goto_next_error()
+    vim.diagnostic.goto_next({
+        severity = vim.diagnostic.severity.ERROR, -- restrict to errors only
+        wrap = true,                              -- wrap around file
+    })
+end
+
+-- Function to jump to the previous error
+function goto_prev_error()
+    vim.diagnostic.goto_prev({
+        severity = vim.diagnostic.severity.ERROR,
+        wrap = true,
+    })
+end
+
+-- Keymaps
 local wk = require("which-key")
 
 -- Register mappings with `which-key.add`
@@ -85,14 +118,24 @@ wk.add({
         desc = "Previous TODO",
     },
     {
+        "]w",
+        ':lua goto_next_warning()<CR>',
+        desc = "Next WARNING",
+    },
+    {
+        "[w",
+        ':lua goto_prev_warning()<CR>',
+        desc = "Previous WARNING",
+    },
+    {
         "]e",
-        '<cmd>lua require("todo-comments").jump_next({ keywords = { "ERROR", "WARNING" } })<CR>',
-        desc = "Next Error/Warning TODO",
+        ':lua goto_next_error()<CR>',
+        desc = "Next Error",
     },
     {
         "[e",
-        '<cmd>lua require("todo-comments").jump_prev({ keywords = { "ERROR", "WARNING" } })<CR>',
-        desc = "Previous Error/Warning TODO",
+        ':lua goto_prev_error()<CR>',
+        desc = "Previous Error",
     },
     -- Copy file path and line number
     {
@@ -143,15 +186,22 @@ wk.add({
     { "gr", "<cmd>FzfLua lsp_references      jump1=true ignore_current_line=true<cr>", desc = "References", nowait = true },
     { "gI", "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>", desc = "Goto Implementation" },
     { "gy", "<cmd>FzfLua lsp_typedefs        jump1=true ignore_current_line=true<cr>", desc = "Goto T[y]pe Definition" },
-    { "<leader>gc", ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})<cr>", desc = "Goto Configuration Files" },
+    { "<leader>fc", ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})<cr>", desc = "Open Configuration Files" },
     { "<leader><Bar>", ":vsplit<cr>", desc = "Split Screen" },
-    { "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Diagnostics (Trouble)" },
-    { "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics (Trouble)" },
+    { "<leader>xx", "<cmd>Trouble diagnostics toggle win.position=right filter.buf=0 filter.severity=vim.diagnostic.severity.ERROR <cr>", desc = "Errors" },
+    { "<leader>xw", "<cmd>Trouble diagnostics toggle win.position=right filter.buf=0 filter.severity=vim.diagnostic.severity.WARN <cr>", desc = "Warnings" },
+    { "<leader>xa", "<cmd>Trouble diagnostics toggle win.position=right filter.buf=0  <cr>", desc = "Diagnostics (Trouble)" },
+    { "<leader>xX", "<cmd>Trouble diagnostics toggle win.position=right <cr>", desc = "Workspace Diagnostics (Trouble)" },
     { "<leader>cs", "<cmd>Trouble symbols toggle<cr>", desc = "Symbols (Trouble)" },
+    { "<leader>gb", "<cmd>Gitsigns blame_line<cr>", desc = "Blame Line" },
+    { "<leader>gB", "<cmd>Gitsigns blame<cr>", desc = "Show all Blame" },
+    { "<leader>gr", "<cmd>Gitsigns reset_hunk<cr>", desc = "Reset Hunk" },
     { "<leader>cS", "<cmd>Trouble lsp toggle<cr>", desc = "LSP references/definitions/... (Trouble)" },
     { "<leader>xL", "<cmd>Trouble loclist toggle<cr>", desc = "Location List (Trouble)" },
     { "<leader>xQ", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List (Trouble)" },
     { "<leader>fs", ":RipSubstitute<cr>", mode = { "n", "x" }, desc = " rip substitute" },
+    { "<Leader>rs", "<cmd>Greyjoy<CR>", desc = "[r]un [S]cript " },
+    { "<Leader>re", "<cmd>Greyedit<CR>", desc = "[e]edit before run  [S]cript " },
 
 })
 
