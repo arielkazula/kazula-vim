@@ -49,3 +49,21 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     end
   end,
 })
+
+-- 4. Clangd Index Directory Fix ------------------------------------------
+-- Safely try to create the .cache folder for clangd background indexing.
+-- If it fails (e.g. read-only filesystem), we silently continue.
+vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
+  group = augroup("clangd_cache_fix"),
+  pattern = { "*.c", "*.cpp", "*.cc", "*.h", "*.hpp" },
+  callback = function()
+    local root = vim.fs.root(0, { ".git", "compile_commands.json", "build" })
+    if root then
+      local cache_dir = root .. "/.cache/clangd/index"
+      if vim.fn.isdirectory(cache_dir) == 0 then
+        -- pcall prevents "Permission denied" from stopping Neovim
+        pcall(function() vim.fn.mkdir(cache_dir, "p") end)
+      end
+    end
+  end,
+})

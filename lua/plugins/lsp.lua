@@ -42,13 +42,6 @@ return {
                 vim.lsp.config("*", { capabilities = capabilities })
             end
 
-            -- Standard Practice Cache Path
-            -- Redirects clangd index to a writable user directory.
-            local clangd_cache_path = vim.fn.stdpath("cache") .. "/clangd/index"
-            if vim.fn.isdirectory(clangd_cache_path) == 0 then
-                vim.fn.mkdir(clangd_cache_path, "p")
-            end
-
             -- Server-specific overrides
             vim.lsp.config("clangd", {
                 filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "cc", "h" },
@@ -60,8 +53,7 @@ return {
                 cmd = {
                     "clangd",
                     "-j=4",
-                    "--background-index", -- ENABLED (Standard practice)
-                    "--background-index-storage=" .. clangd_cache_path, -- REDIRECTED (Fixes permission error)
+                    "--background-index", -- Restore indexing (no redirection possible via flag)
                     "--clang-tidy",
                     "--completion-style=detailed",
                     "--header-insertion=never",
@@ -132,7 +124,7 @@ return {
         end,
     },
 
-    -- Advanced Syntax Highlighting
+    -- Treesitter
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
