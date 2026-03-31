@@ -1,6 +1,5 @@
 -- lua/plugins/lsp.lua ----------------------------------------------------
--- This file manages LSP using Neovim 0.11+ native APIs.
--- It avoids the deprecated nvim-lspconfig "framework" entirely.
+-- This file manages LSP and Treesitter using Neovim 0.11+ native APIs.
 
 return {
     -- 1. Mason: Tool management
@@ -29,33 +28,25 @@ return {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            -- In v2.0+, this automatically calls vim.lsp.enable()
-            automatic_enable = true,
+            -- Disable automatic_enable so we can use a safe wrapper
+            automatic_enable = false,
         },
         config = function(_, opts)
-            -- Load lspconfig once to register all templates into vim.lsp.config
-            require("lspconfig")
-            
+            local mlsp = require("mason-lspconfig")
+            mlsp.setup(opts)
+
             local capabilities = require("blink.cmp").get_lsp_capabilities()
             capabilities.offsetEncoding = { "utf-16" }
 
-            -- Set global defaults for ALL servers using the new 0.11 API
-            -- This also adds a guard to ignore non-file URIs (like oil://)
-            vim.lsp.config("*", {
-                capabilities = capabilities,
-                root_dir = function(path, _)
-                    -- Guard: If we are in an oil buffer or non-file scheme, return nil
-                    -- This prevents the server from starting and avoids the URI error.
-                    if path:match("^%w+://") then
-                        return nil
-                    end
-                    -- Use default detection logic (markers) for everything else
-                    return nil -- Returning nil here lets the specific server config or template decide
-                end,
-            })
+            -- Set global defaults for ALL servers
+            if vim.lsp.config then
+                vim.lsp.config("*", { capabilities = capabilities })
+            end
 
-            -- Specialized configuration for Clangd
+            -- Server-specific overrides using native vim.lsp.config
+            -- We use 'root_markers' which is the 0.11+ way to define project roots.
             vim.lsp.config("clangd", {
+                root_markers = { ".git", "compile_commands.json", "build", "CMakeLists.txt" },
                 cmd = {
                     "clangd", "-j=4", "--background-index", "--clang-tidy",
                     "--completion-style=detailed", "--header-insertion=never",
@@ -64,8 +55,8 @@ return {
                 },
             })
 
-            -- Specialized configuration for Lua
             vim.lsp.config("lua_ls", {
+                root_markers = { ".luarc.json", ".git", "init.lua" },
                 settings = {
                     Lua = {
                         diagnostics = { globals = { "vim" } },
@@ -74,15 +65,27 @@ return {
                 },
             })
 
-            -- Specialized configuration for Harper
-            vim.lsp.config("harper_ls", {
-                settings = {
-                    ["harper-ls"] = { linters = { spell_check = true } },
-                },
-            })
+            -- A safe enabler that ignores oil:// and other non-file buffers
+            -- to prevent the "File URL host" error on Linux.
+            local function safe_enable(server)
+                vim.api.nvim_create_autocmd("FileType", {
+                    pattern = "*",
+                    callback = function(args)
+                        local buf = args.buf
+                        local uri = vim.uri_from_bufnr(buf)
+                        if not uri:match("^file://") then
+                            return
+                        end
+                        -- Only enable if the server supports this filetype (logic handled by core)
+                        vim.lsp.enable(server)
+                    end,
+                })
+            end
 
-            -- Initialize mason-lspconfig to enable the servers
-            require("mason-lspconfig").setup(opts)
+            -- Enable all installed servers safely
+            for _, server in ipairs(mlsp.get_installed_servers()) do
+                safe_enable(server)
+            end
         end,
     },
 
@@ -117,6 +120,7 @@ return {
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
+    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
@@ -153,7 +157,7 @@ return {
         },
     },
 
-    -- Trouble
+    -- Improved Diagnostic UI (Trouble)
     {
         "folke/trouble.nvim",
         cmd = { "Trouble" },
