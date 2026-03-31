@@ -30,7 +30,7 @@ wk.add({
     { "R", function() require("flash").treesitter_search() end, mode = { "o", "x" }, desc = "Treesitter Search" },
     { "<c-s>", function() require("flash").toggle() end, mode = "c", desc = "Toggle Flash Search" },
 
-    -- Smart Splits (Directional Navigation & Resizing)
+    -- Smart Splits
     { "<C-h>", function() require('smart-splits').move_cursor_left() end, desc = "Go to Left Split" },
     { "<C-j>", function() require('smart-splits').move_cursor_down() end, desc = "Go to Down Split" },
     { "<C-k>", function() require('smart-splits').move_cursor_up() end, desc = "Go to Up Split" },
@@ -40,6 +40,19 @@ wk.add({
     { "<leader>wrj", function() require('smart-splits').resize_down() end, desc = "Resize Down" },
     { "<leader>wrk", function() require('smart-splits').resize_up() end, desc = "Resize Up" },
     { "<leader>wrl", function() require('smart-splits').resize_right() end, desc = "Resize Right" },
+
+    -- Harpoon (Quick file switching)
+    { "<leader>h", group = "harpoon" },
+    { "<leader>ha", function() require("harpoon"):list():add() end, desc = "Harpoon Add File" },
+    { "<leader>hh", function() require("harpoon").ui:toggle_quick_menu(require("harpoon"):list()) end, desc = "Harpoon Menu" },
+    { "<leader>h1", function() require("harpoon"):list():select(1) end, desc = "Harpoon File 1" },
+    { "<leader>h2", function() require("harpoon"):list():select(2) end, desc = "Harpoon File 2" },
+    { "<leader>h3", function() require("harpoon"):list():select(3) end, desc = "Harpoon File 3" },
+    { "<leader>h4", function() require("harpoon"):list():select(4) end, desc = "Harpoon File 4" },
+
+    -- Dial (Increment/Decrement)
+    { "<C-a>", function() return require("dial.map").inc_normal() end, expr = true, desc = "Increment" },
+    { "<C-x>", function() return require("dial.map").dec_normal() end, expr = true, desc = "Decrement" },
 
     -- Core / General
     { "<leader><Bar>", ":vsplit<cr>", desc = "Split Screen Vertical" },
@@ -63,14 +76,14 @@ wk.add({
     { "[", group = "prev" },
     { "]", group = "next" },
 
-    -- File / Find (FZF-Lua & Oil.nvim)
+    -- File / Find
     { "<leader><leader>", function() require("fzf-lua").files() end, desc = "Find Files (FZF)" },
     { "<leader>ff", function() require("fzf-lua").files() end, desc = "Find Files (FZF)" },
     { "<leader>fg", function() require("fzf-lua").live_grep() end, desc = "Live Grep" },
     { "<leader>fb", function() require("fzf-lua").buffers() end, desc = "Buffers" },
     { "<leader>fc", function() require("snacks").dashboard.pick('files', {cwd = vim.fn.stdpath('config')}) end, desc = "Open Config" },
     
-    -- Specialized Find (Restored Grep In)
+    -- Specialized Find
     { "<leader>fi", group = "Grep In" },
     { "<leader>fid", function() require('fzf-lua').live_grep({ cwd = vim.fn.expand('%:p:h') }) end, desc = "Current Directory" },
     { "<leader>fip", function() require('fzf-lua').live_grep({ cwd = vim.fn.fnamemodify(vim.fn.expand('%:p:h'), ':h') }) end, desc = "Parent Directory" },
@@ -78,7 +91,7 @@ wk.add({
     { "<leader>fw", group = "Workspace" },
     { "<leader>fws", function() require("fzf-lua").lsp_workspace_symbols() end, desc = "Workspace Symbols" },
     { "<leader>fwd", function() require("fzf-lua").diagnostics_workspace() end, desc = "Workspace Diagnostics" },
-    { "<leader>e", "<cmd>Oil --float<CR>", desc = "Oil File Explorer (Floating)" },
+    { "<leader>e", "<cmd>Oil --float<CR>", desc = "Oil File Explorer" },
     { "-", function() require("oil").open() end, desc = "Oil Parent Directory" },
 
     -- Code / LSP
@@ -89,7 +102,6 @@ wk.add({
     { "gra", "<cmd>FzfLua lsp_code_actions<cr>", desc = "Code Action (FZF)" },
     { "grn", vim.lsp.buf.rename, desc = "Rename (LSP)" },
     
-    -- Legacy / Leader-based LSP (for muscle memory)
     { "K", function() vim.lsp.buf.hover() end, desc = "LSP Hover Docs" },
     { "<leader>cd", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
     { "<leader>cr", vim.lsp.buf.rename, desc = "Rename (LSP)" },
@@ -98,7 +110,7 @@ wk.add({
     { "<leader>cn", function() require("neogen").generate() end, desc = "Generate Annotations (Neogen)" },
     { "<leader>ss", function() require("fzf-lua").lsp_document_symbols() end, desc = "Goto Symbol" },
 
-    -- Search & Replace (Grug-Far & RipSubstitute)
+    -- Search & Replace
     { "<leader>sa", "<cmd>FzfLua autocmds<cr>", desc = "Auto Commands" },
     { "<leader>sb", "<cmd>FzfLua grep_curbuf<cr>", desc = "Buffer" },
     { "<leader>sc", "<cmd>FzfLua command_history<cr>", desc = "Command History" },
@@ -107,11 +119,14 @@ wk.add({
     { "<leader>sw", function() require("grug-far").open({ prefills = { search = vim.fn.expand("<cword>") } }) end, desc = "Replace Word" },
     { "<leader>fs", ":RipSubstitute<cr>", mode = { "n", "x" }, desc = "Rip Substitute (Regex)" },
 
-    -- Git (Gitsigns)
+    -- Git (Gitsigns & Diffview)
     { "<leader>gp", function() require("gitsigns").preview_hunk() end, desc = "Preview Hunk" },
     { "<leader>gb", function() require("gitsigns").blame_line() end, desc = "Blame Line" },
     { "<leader>gB", function() require("gitsigns").blame() end, desc = "Show All Blame" },
     { "<leader>gr", function() require("gitsigns").reset_hunk() end, desc = "Reset Hunk" },
+    { "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "Diffview Open" },
+    { "<leader>gc", "<cmd>DiffviewClose<cr>", desc = "Diffview Close" },
+    { "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "File History" },
 
     -- Diagnostics & Trouble
     { "<leader>xx", "<cmd>Trouble diagnostics toggle filter.buf=0 filter.severity=vim.diagnostic.severity.ERROR<cr>", desc = "Buffer Errors" },
@@ -145,5 +160,12 @@ wk.add({
     { "<leader>ul", "<cmd>LspRestart<cr>", desc = "Restart LSP" },
     { "<leader>un", function() Snacks.notifier.show_history() end, desc = "Notification History" },
     { "<leader>ud", function() Snacks.dashboard.open() end, desc = "Open Dashboard" },
+    { "<leader>uf", "<cmd>UfoToggle<cr>", desc = "Toggle Folding" },
     { "gx", desc = "Open with system app" },
+    
+    -- UFO Folding specific (Non-leader)
+    { "zR", function() require('ufo').openAllFolds() end, desc = "Open All Folds" },
+    { "zM", function() require('ufo').closeAllFolds() end, desc = "Close All Folds" },
+    { "zr", function() require('ufo').openFoldsExceptKinds() end, desc = "Open Folds Except Kinds" },
+    { "zm", function() require('ufo').closeFoldsWith() end, desc = "Close Folds With" },
 })

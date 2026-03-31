@@ -1,33 +1,19 @@
 -- lua/plugins/ui.lua -----------------------------------------------------
 -- This file handles the visual aspects of Neovim, including themes, 
--- statuslines, Git indicators, and dashboard.
+-- statuslines, advanced UI components, and modern folding.
 
 return {
     -- Modern and fast dark theme (OneDark)
-    -- Optimized with specific highlights for better TreeSitter and LSP feedback.
     {
         "navarasu/onedark.nvim",
-        priority = 1000, -- Load this before anything else
+        priority = 1000,
         config = function()
             require("onedark").setup({
                 style = "dark",
                 transparent = true,
                 term_colors = true,
-                ending_tildes = false,
-                code_style = {
-                    comments = "italic",
-                    keywords = "none",
-                    functions = "none",
-                    strings = "none",
-                    variables = "none",
-                },
                 highlights = {
                     ["@comment.documentation"] = { fg = "#3cb371" },
-                },
-                diagnostics = {
-                    darker = true,
-                    undercurl = true,
-                    background = false,
                 },
             })
             require("onedark").load()
@@ -35,7 +21,6 @@ return {
     },
 
     -- Minimalist and fast statusline (Lualine.nvim)
-    -- Replaced default section separators to maintain a "flat" and modern look.
     {
         "nvim-lualine/lualine.nvim",
         event = "VeryLazy",
@@ -44,13 +29,56 @@ return {
                 theme = "onedark",
                 section_separators = "",
                 component_separators = "",
-                globalstatus = true, -- Shared statusline across all windows
+                globalstatus = true,
             },
         },
     },
 
-    -- High-performance Git indicators (Gitsigns.nvim)
-    -- Shows line additions, changes, and deletions in the gutter (sign column).
+    -- Experimental: Modernize the Command Line, Messages, and Popupmenu
+    -- Replaces the bottom command line with a floating prompt.
+    {
+        "folke/noice.nvim",
+        event = "VeryLazy",
+        dependencies = { "MunifTanjim/nui.nvim", "rcarriga/nvim-notify" },
+        opts = {
+            lsp = {
+                override = {
+                    ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+                    ["vim.lsp.util.stylize_markdown"] = true,
+                    ["cmp.entry.get_documentation"] = true,
+                },
+            },
+            presets = {
+                bottom_search = true,
+                command_palette = true,
+                long_message_to_split = true,
+                inc_rename = false,
+                lsp_doc_border = true,
+            },
+        },
+    },
+
+    -- High-performance folding (nvim-ufo)
+    -- Makes folding as pretty and fast as VS Code.
+    {
+        "kevinhwang91/nvim-ufo",
+        dependencies = { "kevinhwang91/promise-async" },
+        event = "BufReadPost",
+        init = function()
+            -- Fold settings needed for ufo
+            vim.o.foldcolumn = '1'
+            vim.o.foldlevel = 99
+            vim.o.foldlevelstart = 99
+            vim.o.foldenable = true
+        end,
+        opts = {
+            provider_selector = function(bufnr, filetype, buftype)
+                return {'treesitter', 'indent'}
+            end
+        },
+    },
+
+    -- Gitsigns
     {
         "lewis6991/gitsigns.nvim",
         event = { "BufReadPre", "BufNewFile" },
@@ -66,13 +94,12 @@ return {
     },
 
     -- Comprehensive QoL modules (Snacks.nvim)
-    -- Replaces several smaller plugins with a single, highly optimized suite.
     {
         "folke/snacks.nvim",
         priority = 1000,
         lazy = false,
         opts = {
-            bigfile   = { enabled = true }, -- Optimizes performance for large files
+            bigfile   = { enabled = true },
             dashboard = {
                 preset = {
                     header = [[
@@ -95,29 +122,22 @@ return {
                     },
                 },
             },
-            indent    = { enabled = true }, -- Shows indentation guides (replacing indent-blankline)
-            input     = { enabled = true }, -- Nicer prompt for vim.ui.input
-            notifier  = { enabled = true }, -- Elegant notification system
-            quickfile = { enabled = true }, -- Loads file content instantly before plugins finish
-            words     = { enabled = true }, -- Highlights other occurrences of the word under cursor
+            indent    = { enabled = true },
+            input     = { enabled = true },
+            notifier  = { enabled = true },
+            quickfile = { enabled = true },
+            words     = { enabled = true },
         },
     },
 
-    -- Discovery tool for keybindings (Which-Key.nvim)
-    -- Provides an interactive popup menu that helps you remember your shortcuts.
+    -- Discovery tool
     {
         "folke/which-key.nvim",
         event = "VeryLazy",
         opts = {
             preset = "helix",
-            icons = {
-                breadcrumb = "»",
-                separator = "➜",
-                group = "+",
-            },
         },
     },
 
-    -- Better icons for various plugins
     { "nvim-tree/nvim-web-devicons", lazy = true },
 }

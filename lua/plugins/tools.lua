@@ -1,6 +1,6 @@
 -- lua/plugins/tools.lua --------------------------------------------------
 -- This file contains productivity tools for task management, 
--- formatting, searching & replacing, and sessions.
+-- formatting, sessions, and advanced Git visualization.
 
 return {
     -- Sophisticated task runner (Overseer)
@@ -39,6 +39,22 @@ return {
         opts = { headerMaxWidth = 80, transient = true },
     },
 
+    -- Single-tab Git Diff interface (Diffview.nvim)
+    -- Essential for reviewing complex changes and merge conflicts.
+    {
+        "sindrets/diffview.nvim",
+        cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory" },
+        opts = {},
+    },
+
+    -- Modern Markdown preview/rendering inside the buffer
+    {
+        "MeanderingProgrammer/render-markdown.nvim",
+        dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
+        ft = { "markdown" },
+        opts = {},
+    },
+
     -- Simple and reliable session management (Persistence.nvim)
     {
         "folke/persistence.nvim",
@@ -54,7 +70,6 @@ return {
     },
 
     -- Lag-free mode switching (better-escape.nvim)
-    -- Allows using 'jk' or 'jj' to exit insert mode instantly.
     {
         "max397574/better-escape.nvim",
         event = "InsertEnter",
@@ -72,13 +87,8 @@ return {
     },
 
     -- Enhanced increment/decrement (dial.nvim)
-    -- Toggles true/false, increments dates, hex colors, and more with <C-a>/<C-x>.
     {
         "monaqa/dial.nvim",
-        keys = {
-            { "<C-a>", function() return require("dial.map").inc_normal() end, expr = true, desc = "Increment" },
-            { "<C-x>", function() return require("dial.map").dec_normal() end, expr = true, desc = "Decrement" },
-        },
         config = function()
             local augend = require("dial.augend")
             require("dial.config").augends:register_group({

@@ -1,6 +1,6 @@
 -- lua/plugins/navigation.lua ---------------------------------------------
 -- This file contains plugins for fuzzy finding, file exploration, 
--- and jumping between text (motions).
+-- jumping between text, and high-speed project navigation.
 
 return {
   -- High-performance fuzzy finder (FZF-Lua)
@@ -8,10 +8,40 @@ return {
     "ibhagwan/fzf-lua",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     cmd = "FzfLua",
-    opts = {},
+    opts = {
+        -- Make the UI look more like modern configs
+        winopts = {
+            height = 0.85,
+            width = 0.80,
+            preview = {
+                hidden = "nohidden",
+                vertical = "up:45%",
+                horizontal = "right:50%",
+                layout = "flex",
+            },
+        },
+        fzf_opts = { ["--tiebreak"] = "begin" },
+    },
     config = function(_, opts)
       require("fzf-lua").setup(opts)
       require("fzf-lua").register_ui_select()
+    end,
+  },
+
+  -- Harpoon2: Lightning fast file switching
+  -- Unlike fuzzy finders, this lets you 'hook' specific files to keys.
+  {
+    "ThePrimeagen/harpoon",
+    branch = "harpoon2",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    opts = {
+        settings = {
+            save_on_toggle = true,
+            sync_on_ui_close = true,
+        },
+    },
+    config = function(_, opts)
+        require("harpoon").setup(opts)
     end,
   },
 
@@ -42,7 +72,6 @@ return {
   },
 
   -- Intuitive split management (smart-splits.nvim)
-  -- Navigates seamlessly between splits and supports resizing with Meta keys.
   {
     "mrjones2014/smart-splits.nvim",
     lazy = false,
