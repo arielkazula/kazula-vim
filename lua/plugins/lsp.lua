@@ -38,16 +38,17 @@ return {
             capabilities.offsetEncoding = { "utf-16" }
 
             -- Set global defaults using Neovim 0.11 API
+            -- This includes the CRITICAL guard for oil.nvim
             if vim.lsp.config then
                 vim.lsp.config("*", {
                     capabilities = capabilities,
-                    -- FIX: 'buf' is a number (bufnr) in the 0.11 root_dir function
                     root_dir = function(buf)
                         local uri = vim.uri_from_bufnr(buf)
+                        -- If it's a special buffer (oil, fugitive, etc), don't start LSP
                         if uri:match("^%w+://") and not uri:match("^file://") then
-                            return nil -- Ignore non-file URIs like oil://
+                            return nil
                         end
-                        return nil -- Fallback to default marker detection
+                        return nil -- Fallback to default markers
                     end,
                 })
             end
@@ -75,7 +76,6 @@ return {
                     "--enable-config",
                     "--malloc-trim",
                     "--pch-storage=disk",
-                    "--extra-arg=-Wno-unreachable-code",
                 },
             })
 
@@ -106,21 +106,10 @@ return {
                 },
             })
 
-            -- Safe enabler: ignores non-file buffers (like oil://)
-            local function safe_enable(server)
-                vim.api.nvim_create_autocmd("FileType", {
-                    pattern = "*",
-                    callback = function(args)
-                        local uri = vim.uri_from_bufnr(args.buf)
-                        if uri:match("^file://") then
-                            vim.lsp.enable(server)
-                        end
-                    end,
-                })
-            end
-
+            -- Enable all installed servers globally
+            -- The native 0.11 system will use the config and guards we defined above.
             for _, server in ipairs(mlsp.get_installed_servers()) do
-                safe_enable(server)
+                vim.lsp.enable(server)
             end
         end,
     },
@@ -140,7 +129,7 @@ return {
         end,
     },
 
-    -- Treesitter
+    -- Advanced Syntax Highlighting
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
