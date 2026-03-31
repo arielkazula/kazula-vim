@@ -96,7 +96,7 @@ return {
                 },
             })
 
-            -- Safe enabler: ignores non-file buffers (like oil://)
+            -- Safe enabler
             local function safe_enable(server)
                 vim.api.nvim_create_autocmd("FileType", {
                     pattern = "*",
@@ -156,25 +156,43 @@ return {
         opts = { mode = "cursor", max_lines = 3 },
     },
 
-    -- Documentation Generator (Neogen)
+    -- Universal Documentation Generator (Neogen)
     {
         "danymat/neogen",
         cmd = "Neogen",
         opts = {
             enabled = true,
             languages = {
+                -- Unified Doxygen template for C and C++
+                cs = { template = { annotation_convention = "doxygen" } },
+                c = {
+                    template = {
+                        annotation_convention = "custom",
+                        custom = {
+                            { nil, "/**", { no_results = true, type = { "func", "file", "type" } } },
+                            { nil, " * @file", { no_results = true, type = { "file" } } },
+                            { nil, " * $1", { no_results = true, type = { "func", "file", "type" } } },
+                            { nil, " */", { no_results = true, type = { "func", "file", "type" } } },
+                            { nil, "" },
+                            { nil, "/**", { type = { "func", "type" } } },
+                            { nil, " * @brief $1", { type = { "func", "type" } } },
+                            { "parameters", " * @param %s $1" },
+                            { "return_statement", " * @return $1" },
+                            { nil, " */" },
+                        },
+                    },
+                },
                 cpp = {
                     template = {
                         annotation_convention = "custom",
                         custom = {
-                            { nil, "/**", { no_results = true, type = { "func", "file" } } },
+                            { nil, "/**", { no_results = true, type = { "func", "file", "class" } } },
                             { nil, " * @file", { no_results = true, type = { "file" } } },
-                            { nil, " * $1", { no_results = true, type = { "func", "file" } } },
-                            { nil, " */", { no_results = true, type = { "func", "file" } } },
+                            { nil, " * $1", { no_results = true, type = { "func", "file", "class" } } },
+                            { nil, " */", { no_results = true, type = { "func", "file", "class" } } },
                             { nil, "" },
-                            { nil, "/**", { type = { "func" } } },
-                            { nil, " * $1", { type = { "func" } } },
-                            { nil, " *" },
+                            { nil, "/**", { type = { "func", "class" } } },
+                            { nil, " * @brief $1", { type = { "func", "class" } } },
                             { "tparam", " * @tparam %s $1" },
                             { "parameters", " * @param %s $1" },
                             { "return_statement", " * @return $1" },
@@ -182,6 +200,9 @@ return {
                         },
                     },
                 },
+                -- Best practice conventions for other languages
+                python = { template = { annotation_convention = "google_docstrings" } },
+                lua = { template = { annotation_convention = "ldoc" } },
             },
         },
     },

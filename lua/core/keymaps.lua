@@ -52,7 +52,8 @@ wk.add({
     { "gra", function() vim.lsp.buf.code_action() end, desc = "Code Action" },
     { "grn", vim.lsp.buf.rename, desc = "Rename (LSP)" },
     { "K", function() vim.lsp.buf.hover() end, desc = "LSP Hover Docs" },
-    { "<leader>cd", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
+    { "<leader>cd", function() require("neogen").generate() end, desc = "Doxygen Annotation" }, -- NEW KEYMAP
+    { "<leader>cl", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
     { "<leader>cr", vim.lsp.buf.rename, desc = "Rename symbol" },
     { "<leader>ca", function() vim.lsp.buf.code_action() end, desc = "Code Actions" },
     { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>", desc = "Switch Header/Source (C++)" },
@@ -98,7 +99,7 @@ wk.add({
     { "<leader>sw", function() require("fzf-lua").grep_cword() end, desc = "Search Word" },
     { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace" },
     { "<leader>sf", ":RipSubstitute<cr>", desc = "Rip Substitute" },
-    { "<leader>st", "<cmd>TodoFzfLua keywords=TODO<cr>", desc = "Search Project TODOs" }, -- FILTERED
+    { "<leader>st", "<cmd>TodoFzfLua keywords=TODO<cr>", desc = "Search Project TODOs" },
 
     -- Group: [u]i
     { "<leader>u", group = "ui", icon = { icon = "󰙵 ", color = "cyan" } },
@@ -111,11 +112,11 @@ wk.add({
     { "<leader>x", group = "diagnostics", icon = { icon = "󱖫 ", color = "green" } },
     { "<leader>xx", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics" },
     { "<leader>xX", "<cmd>Trouble diagnostics toggle<cr>", desc = "Workspace Diagnostics" },
-    { "<leader>xt", "<cmd>TodoTrouble filter = {tag = {TODO}}<cr>", desc = "Project TODOs (Trouble)" }, -- FILTERED
+    { "<leader>xt", "<cmd>TodoTrouble filter = {tag = {TODO}}<cr>", desc = "Project TODOs (Trouble)" },
     { "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Location List" },
     { "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List" },
 
-    -- Navigation (FILTERED JUMP)
+    -- Navigation
     { "[e", function() goto_prev_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Prev Error" },
     { "]e", function() goto_next_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Next Error" },
     { "[t", function() require("todo-comments").jump_prev({ keywords = { "TODO" } }) end, desc = "Prev TODO" },
