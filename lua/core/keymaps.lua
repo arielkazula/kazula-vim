@@ -98,7 +98,7 @@ wk.add({
     { "<leader>sw", function() require("fzf-lua").grep_cword() end, desc = "Search Word" },
     { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace" },
     { "<leader>sf", ":RipSubstitute<cr>", desc = "Rip Substitute" },
-    { "<leader>st", "<cmd>TodoFzfLua<cr>", desc = "Search Project TODOs" }, -- NEW: Show all todos in project
+    { "<leader>st", "<cmd>TodoFzfLua keywords=TODO<cr>", desc = "Search Project TODOs" }, -- FILTERED
 
     -- Group: [u]i
     { "<leader>u", group = "ui", icon = { icon = "󰙵 ", color = "cyan" } },
@@ -111,15 +111,15 @@ wk.add({
     { "<leader>x", group = "diagnostics", icon = { icon = "󱖫 ", color = "green" } },
     { "<leader>xx", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer Diagnostics" },
     { "<leader>xX", "<cmd>Trouble diagnostics toggle<cr>", desc = "Workspace Diagnostics" },
-    { "<leader>xt", "<cmd>TodoTrouble<cr>", desc = "Project TODOs (Trouble)" }, -- NEW: View all todos in Trouble panel
+    { "<leader>xt", "<cmd>TodoTrouble filter = {tag = {TODO}}<cr>", desc = "Project TODOs (Trouble)" }, -- FILTERED
     { "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Location List" },
     { "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix List" },
 
-    -- Navigation
+    -- Navigation (FILTERED JUMP)
     { "[e", function() goto_prev_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Prev Error" },
     { "]e", function() goto_next_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Next Error" },
-    { "[t", function() require("todo-comments").jump_prev() end, desc = "Prev TODO" },
-    { "]t", function() require("todo-comments").jump_next() end, desc = "Next TODO" },
+    { "[t", function() require("todo-comments").jump_prev({ keywords = { "TODO" } }) end, desc = "Prev TODO" },
+    { "]t", function() require("todo-comments").jump_next({ keywords = { "TODO" } }) end, desc = "Next TODO" },
     
     { "gx", desc = "Open with system app" },
 })
