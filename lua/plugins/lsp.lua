@@ -43,15 +43,24 @@ return {
             end
 
             -- Server-specific overrides
+            -- We must include all markers to ensure .clangd and compile_commands are respected.
             vim.lsp.config("clangd", {
-                -- Added explicit support for .cc and .h extensions
                 filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "cc", "h" },
-                root_markers = { ".git", "compile_commands.json", "build", "CMakeLists.txt" },
+                root_markers = {
+                    ".clangd",
+                    ".clang-tidy",
+                    ".clang-format",
+                    "compile_commands.json",
+                    "compile_flags.txt",
+                    "configure.ac",
+                    ".git",
+                },
                 cmd = {
                     "clangd", "-j=4", "--background-index", "--clang-tidy",
                     "--completion-style=detailed", "--header-insertion=never",
                     "--fallback-style=llvm", "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true",
+                    "--enable-config", -- Explicitly enable reading .clangd files
                 },
             })
 
