@@ -43,6 +43,7 @@ return {
             end
 
             -- Server-specific overrides
+            -- Optimized Clangd configuration for 2025 (Large Projects)
             vim.lsp.config("clangd", {
                 filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "cc", "h" },
                 root_markers = {
@@ -52,15 +53,20 @@ return {
                 },
                 cmd = {
                     "clangd",
-                    "-j=4",
-                    "--background-index", -- Restore indexing (no redirection possible via flag)
+                    "-j=4",                          -- worker threads
+                    "--background-index",            -- EXPLICITLY ON (Standard Practice)
+                    "--background-index-priority=background",
                     "--clang-tidy",
+                    "--all-scopes-completion",       -- Better code suggestions
                     "--completion-style=detailed",
-                    "--header-insertion=never",
+                    "--header-insertion=iwyu",       -- Best practice for includes
+                    "--header-insertion-decorators",
                     "--fallback-style=llvm",
                     "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true",
-                    "--enable-config",
+                    "--enable-config",               -- Read .clangd files
+                    "--malloc-trim",                 -- Memory management (Linux)
+                    "--pch-storage=disk",            -- Scale for large projects
                 },
             })
 
@@ -124,7 +130,7 @@ return {
         end,
     },
 
-    -- Treesitter
+    -- Advanced Syntax Highlighting
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -134,7 +140,10 @@ return {
                 "bash", "json", "lua", "markdown", "markdown_inline",
                 "python", "regex", "vim", "cpp", "c", "vimdoc",
             },
-            highlight = { enable = true },
+            highlight = { 
+                enable = true,
+                additional_vim_regex_highlighting = false,
+            },
             indent = { enable = true },
         },
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
