@@ -11,7 +11,6 @@ return {
         config = function(_, opts)
             require("mason").setup(opts)
             local mr = require("mason-registry")
-            -- Removed stylua from auto-install due to GLIBC compatibility issues on older Linux
             local packages = { "clang-format", "jq", "black", "codespell", "shfmt" }
             for _, tool in ipairs(packages) do
                 local p = mr.get_package(tool)
@@ -52,20 +51,10 @@ return {
                     "configure.ac", ".git",
                 },
                 cmd = {
-                    "clangd",
-                    "-j=4",
-                    "--background-index",
-                    "--background-index-priority=background",
-                    "--clang-tidy",
-                    "--all-scopes-completion",
-                    "--completion-style=detailed",
-                    "--header-insertion=never",
-                    "--fallback-style=llvm",
-                    "--offset-encoding=utf-16",
-                    "--function-arg-placeholders=true",
-                    "--enable-config",
-                    "--malloc-trim",
-                    "--pch-storage=disk",
+                    "clangd", "-j=4", "--background-index", "--background-index-priority=background",
+                    "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
+                    "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
+                    "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
                     "--extra-arg=-Wno-unreachable-code",
                 },
             })
@@ -80,16 +69,21 @@ return {
                 },
             })
 
+            -- Refined Harper configuration to fix "Add to dictionary" visibility
             vim.lsp.config("harper_ls", {
                 settings = {
                     ["harper-ls"] = {
-                        userDictPath = vim.fn.getcwd() .. "/spell/dictionary.txt",
+                        -- Ensure absolute path for the dictionary
+                        userDictPath = vim.fn.expand(vim.fn.getcwd() .. "/spell/dictionary.txt"),
                         dialect = "American",
                         linters = {
                             spell_check = true,
                             SentenceCapitalization = false,
                             LongSentences = false,
                             SpelledNumbers = false,
+                        },
+                        codeActions = {
+                            ForceStable = true, -- REQUIRED: Ensures "Add to dictionary" is shown
                         },
                         diagnosticSeverity = "hint",
                     },

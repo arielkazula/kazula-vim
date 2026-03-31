@@ -99,13 +99,13 @@ wk.add({
     { "grr", "<cmd>FzfLua lsp_references jump1=true ignore_current_line=true<cr>", desc = "References (FZF)" },
     { "gri", "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>", desc = "Goto Implementation" },
     { "gy", "<cmd>FzfLua lsp_typedefs jump1=true ignore_current_line=true<cr>", desc = "Goto Type Definition" },
-    { "gra", "<cmd>FzfLua lsp_code_actions<cr>", desc = "Code Action (FZF)" },
+    { "gra", function() vim.lsp.buf.code_action() end, desc = "Code Action (LSP)" }, -- FIXED: Using native call for better resolving
     { "grn", vim.lsp.buf.rename, desc = "Rename (LSP)" },
     
     { "K", function() vim.lsp.buf.hover() end, desc = "LSP Hover Docs" },
     { "<leader>cd", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
     { "<leader>cr", vim.lsp.buf.rename, desc = "Rename (LSP)" },
-    { "<leader>ca", "<cmd>FzfLua lsp_code_actions<cr>", desc = "Code Action (LSP)" },
+    { "<leader>ca", function() vim.lsp.buf.code_action() end, desc = "Code Action (LSP)" }, -- FIXED: Using native call for better resolving
     { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>", desc = "Switch Header/Source (C++)" },
     { "<leader>cn", function() require("neogen").generate() end, desc = "Generate Annotations (Neogen)" },
     { "<leader>ss", function() require("fzf-lua").lsp_document_symbols() end, desc = "Goto Symbol" },
@@ -160,7 +160,7 @@ wk.add({
     { "<leader>ul", "<cmd>LspRestart<cr>", desc = "Restart LSP" },
     { "<leader>un", function() Snacks.notifier.show_history() end, desc = "Notification History" },
     { "<leader>ud", function() Snacks.dashboard.open() end, desc = "Open Dashboard" },
-    { "<leader>uf", "za", desc = "Toggle Folding (UFO)" }, -- FIXED: Replaced invalid command with 'za'
+    { "<leader>uf", "za", desc = "Toggle Folding (UFO)" },
     { "gx", desc = "Open with system app" },
     
     -- UFO Folding specific (Non-leader)
