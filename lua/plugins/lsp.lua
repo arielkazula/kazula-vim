@@ -43,24 +43,18 @@ return {
             end
 
             -- Server-specific overrides
-            -- We must include all markers to ensure .clangd and compile_commands are respected.
             vim.lsp.config("clangd", {
                 filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "cc", "h" },
                 root_markers = {
-                    ".clangd",
-                    ".clang-tidy",
-                    ".clang-format",
-                    "compile_commands.json",
-                    "compile_flags.txt",
-                    "configure.ac",
-                    ".git",
+                    ".clangd", ".clang-tidy", ".clang-format",
+                    "compile_commands.json", "compile_flags.txt",
+                    "configure.ac", ".git",
                 },
                 cmd = {
                     "clangd", "-j=4", "--background-index", "--clang-tidy",
                     "--completion-style=detailed", "--header-insertion=never",
                     "--fallback-style=llvm", "--offset-encoding=utf-16",
-                    "--function-arg-placeholders=true",
-                    "--enable-config", -- Explicitly enable reading .clangd files
+                    "--function-arg-placeholders=true", "--enable-config",
                 },
             })
 
@@ -70,6 +64,17 @@ return {
                     Lua = {
                         diagnostics = { globals = { "vim" } },
                         workspace = { checkThirdParty = false },
+                    },
+                },
+            })
+
+            -- Specialized Harper configuration with project dictionary
+            -- This allows the dictionary.txt to be synced with the repo.
+            vim.lsp.config("harper_ls", {
+                settings = {
+                    ["harper-ls"] = {
+                        userDictPath = vim.fn.getcwd() .. "/spell/dictionary.txt",
+                        linters = { spell_check = true },
                     },
                 },
             })
@@ -93,7 +98,7 @@ return {
         end,
     },
 
-    -- 3. Core LSP Plugin: Handlers and UI
+    -- 3. Core LSP Plugin
     {
         "neovim/nvim-lspconfig",
         event = { "BufReadPre", "BufNewFile" },
@@ -108,7 +113,7 @@ return {
         end,
     },
 
-    -- Advanced Syntax Highlighting (Treesitter)
+    -- Treesitter
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -124,19 +129,16 @@ return {
             },
             indent = { enable = true },
         },
-        config = function(_, opts) 
-            require("nvim-treesitter.configs").setup(opts) 
-        end,
+        config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
-    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
         opts = { mode = "cursor", max_lines = 3 },
     },
 
-    -- Documentation Generator (Neogen)
+    -- Neogen
     {
         "danymat/neogen",
         cmd = "Neogen",
@@ -166,7 +168,7 @@ return {
         },
     },
 
-    -- Improved Diagnostic UI (Trouble)
+    -- Trouble
     {
         "folke/trouble.nvim",
         cmd = { "Trouble" },
