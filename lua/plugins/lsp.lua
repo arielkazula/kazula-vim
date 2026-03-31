@@ -44,7 +44,8 @@ return {
 
             -- Server-specific overrides
             vim.lsp.config("clangd", {
-                filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+                -- Added explicit support for .cc and .h extensions
+                filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "cc", "h" },
                 root_markers = { ".git", "compile_commands.json", "build", "CMakeLists.txt" },
                 cmd = {
                     "clangd", "-j=4", "--background-index", "--clang-tidy",
@@ -99,7 +100,6 @@ return {
     },
 
     -- Advanced Syntax Highlighting (Treesitter)
-    -- This provides the colors/highlights for your code.
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
