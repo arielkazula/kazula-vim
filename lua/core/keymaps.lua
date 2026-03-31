@@ -120,8 +120,8 @@ wk.add({
     { "<leader>rt", "<cmd>OverseerToggle<CR>", desc = "Toggle Task List" },
     
     -- Direct Task Access (NEW)
-    { "<leader>rc", function() require("overseer").run_template({ name = "C++: Generate compile_commands" }) end, desc = "Generate Compile Commands" },
-    { "<leader>rb", function() require("overseer").run_template({ name = "Project: Rebuild (gcc Debug)" }) end, desc = "Rebuild (gcc Debug)" },
+    { "<leader>rc", function() require("overseer").run_task({ name = "C++: Generate compile_commands" }) end, desc = "Generate Compile Commands" },
+    { "<leader>rb", function() require("overseer").run_task({ name = "Project: Rebuild (gcc Debug)" }) end, desc = "Rebuild (gcc Debug)" },
 
     -- Group: [s]earch
     { "<leader>s", group = "search", icon = { icon = "󰍉 ", color = "cyan" } },
