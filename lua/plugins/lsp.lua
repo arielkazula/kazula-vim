@@ -42,6 +42,13 @@ return {
                 vim.lsp.config("*", { capabilities = capabilities })
             end
 
+            -- Standard Practice Cache Path
+            -- Redirects clangd index to a writable user directory.
+            local clangd_cache_path = vim.fn.stdpath("cache") .. "/clangd/index"
+            if vim.fn.isdirectory(clangd_cache_path) == 0 then
+                vim.fn.mkdir(clangd_cache_path, "p")
+            end
+
             -- Server-specific overrides
             vim.lsp.config("clangd", {
                 filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto", "cc", "h" },
@@ -53,7 +60,8 @@ return {
                 cmd = {
                     "clangd",
                     "-j=4",
-                    "--background-index=false", -- DISABLING to prevent shard write errors
+                    "--background-index", -- ENABLED (Standard practice)
+                    "--background-index-storage=" .. clangd_cache_path, -- REDIRECTED (Fixes permission error)
                     "--clang-tidy",
                     "--completion-style=detailed",
                     "--header-insertion=never",
@@ -74,7 +82,6 @@ return {
                 },
             })
 
-            -- Specialized Harper configuration (Low Noise)
             vim.lsp.config("harper_ls", {
                 settings = {
                     ["harper-ls"] = {
@@ -125,7 +132,7 @@ return {
         end,
     },
 
-    -- Treesitter
+    -- Advanced Syntax Highlighting
     {
         "nvim-treesitter/nvim-treesitter",
         event = { "BufReadPost", "BufNewFile" },
@@ -135,10 +142,7 @@ return {
                 "bash", "json", "lua", "markdown", "markdown_inline",
                 "python", "regex", "vim", "cpp", "c", "vimdoc",
             },
-            highlight = { 
-                enable = true,
-                additional_vim_regex_highlighting = false,
-            },
+            highlight = { enable = true },
             indent = { enable = true },
         },
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
