@@ -64,7 +64,7 @@ return {
             mappings = {
                 i = { j = { k = "<Esc>", j = "<Esc>" } },
                 c = { j = { k = "<Esc>", j = "<Esc>" } },
-                t = { j = { k = "<C-\><C-n>", j = "<C-\><C-n>" } },
+                t = { j = { k = "<C-\\><C-n>", j = "<C-\\><C-n>" } },
                 v = { j = { k = "<Esc>", j = "<Esc>" } },
                 s = { j = { k = "<Esc>", j = "<Esc>" } },
             },
