@@ -78,11 +78,13 @@ return {
                 },
             })
 
-            -- Specialized Harper configuration
+            -- Refined Harper configuration to ENSURE "Add to dictionary" is ALWAYS shown
             vim.lsp.config("harper_ls", {
                 settings = {
                     ["harper-ls"] = {
-                        userDictPath = vim.fn.expand(vim.fn.getcwd() .. "/spell/dictionary.txt"),
+                        -- Use workspaceDictPath for repo-synced dictionary
+                        -- This is more robust for project-specific terms.
+                        workspaceDictPath = "./spell/dictionary.txt",
                         dialect = "American",
                         linters = {
                             spell_check = true,
@@ -90,7 +92,9 @@ return {
                             LongSentences = false,
                             SpelledNumbers = false,
                         },
-                        codeActions = { ForceStable = true },
+                        codeActions = {
+                            ForceStable = true, -- CRITICAL: Keeps actions visible
+                        },
                         diagnosticSeverity = "hint",
                     },
                 },
@@ -163,7 +167,6 @@ return {
         opts = {
             enabled = true,
             languages = {
-                -- Unified Doxygen template for C and C++
                 cs = { template = { annotation_convention = "doxygen" } },
                 c = {
                     template = {
@@ -200,7 +203,6 @@ return {
                         },
                     },
                 },
-                -- Best practice conventions for other languages
                 python = { template = { annotation_convention = "google_docstrings" } },
                 lua = { template = { annotation_convention = "ldoc" } },
             },
