@@ -68,13 +68,21 @@ return {
                 },
             })
 
-            -- Specialized Harper configuration with project dictionary
-            -- This allows the dictionary.txt to be synced with the repo.
+            -- Specialized Harper configuration (Low Noise)
             vim.lsp.config("harper_ls", {
                 settings = {
                     ["harper-ls"] = {
                         userDictPath = vim.fn.getcwd() .. "/spell/dictionary.txt",
-                        linters = { spell_check = true },
+                        dialect = "American",
+                        linters = {
+                            spell_check = true,
+                            -- Disable noisy/aggressive grammar rules for code
+                            SentenceCapitalization = false,
+                            LongSentences = false,
+                            SpelledNumbers = false,
+                        },
+                        -- Set to hint so it doesn't look like an actual error
+                        diagnosticSeverity = "hint",
                     },
                 },
             })
@@ -132,13 +140,14 @@ return {
         config = function(_, opts) require("nvim-treesitter.configs").setup(opts) end,
     },
 
+    -- Sticky context header
     {
         "nvim-treesitter/nvim-treesitter-context",
         event = "BufReadPost",
         opts = { mode = "cursor", max_lines = 3 },
     },
 
-    -- Neogen
+    -- Documentation Generator (Neogen)
     {
         "danymat/neogen",
         cmd = "Neogen",
@@ -168,7 +177,7 @@ return {
         },
     },
 
-    -- Trouble
+    -- Improved Diagnostic UI (Trouble)
     {
         "folke/trouble.nvim",
         cmd = { "Trouble" },
