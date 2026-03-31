@@ -7,7 +7,6 @@ local function augroup(name)
 end
 
 -- 1. Highlight on yank ---------------------------------------------------
--- Briefly highlights the text you just yanked (copied) for visual feedback.
 vim.api.nvim_create_autocmd("TextYankPost", {
   group = augroup("highlight_yank"),
   callback = function()
@@ -16,8 +15,6 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 -- 2. LSP & Diagnostics ---------------------------------------------------
--- Automatically show diagnostic (error/warning) information in a 
--- floating window when the cursor stays still on a line.
 vim.api.nvim_create_autocmd("CursorHold", {
   group = augroup("lsp_diagnostics"),
   callback = function()
@@ -26,7 +23,6 @@ vim.api.nvim_create_autocmd("CursorHold", {
 })
 
 -- 3. Buffer behavior -----------------------------------------------------
--- Resize splits automatically when the Neovim window is resized.
 vim.api.nvim_create_autocmd({ "VimResized" }, {
   group = augroup("resize_splits"),
   callback = function()
@@ -37,7 +33,6 @@ vim.api.nvim_create_autocmd({ "VimResized" }, {
 })
 
 -- Go to last loc when opening a buffer
--- Automatically returns the cursor to the last position when reopening a file.
 vim.api.nvim_create_autocmd("BufReadPost", {
   group = augroup("last_loc"),
   callback = function(event)
@@ -55,5 +50,19 @@ vim.api.nvim_create_autocmd("BufReadPost", {
   end,
 })
 
--- 4. Formatting ----------------------------------------------------------
--- (Handled by conform.nvim, but we could add custom logic here if needed)
+-- 4. Clangd Index Directory Fix ------------------------------------------
+-- Proactively create the .cache/clangd/index directory to prevent 
+-- shard write errors on Linux.
+vim.api.nvim_create_autocmd("FileType", {
+  group = augroup("clangd_cache_fix"),
+  pattern = { "c", "cpp", "objc", "objcpp" },
+  callback = function()
+    local root = vim.fs.root(0, { ".git", "compile_commands.json", "build" })
+    if root then
+      local cache_dir = root .. "/.cache/clangd/index"
+      if vim.fn.isdirectory(cache_dir) == 0 then
+        vim.fn.mkdir(cache_dir, "p")
+      end
+    end
+  end,
+})

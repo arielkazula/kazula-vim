@@ -29,7 +29,6 @@ return {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            -- In v2.0+, this automatically calls vim.lsp.enable()
             automatic_enable = true,
         },
         config = function(_, opts)
@@ -37,7 +36,6 @@ return {
             require("lspconfig")
             
             local capabilities = require("blink.cmp").get_lsp_capabilities()
-            -- Force UTF-16 to resolve position encoding conflicts (e.g. clangd)
             capabilities.offsetEncoding = { "utf-16" }
 
             -- Set global defaults for ALL servers using the new 0.11 API
@@ -46,16 +44,20 @@ return {
             })
 
             -- Specialized configuration for Clangd (C++)
-            -- We merge our custom flags into the existing clangd template
+            -- Restored performance flags and added priority settings.
             vim.lsp.config("clangd", {
                 cmd = {
                     "clangd",
                     "-j=4",
                     "--background-index",
+                    "--background-index-priority=background",
                     "--clang-tidy",
                     "--completion-style=detailed",
-                    "--header-insertion=never",
+                    "--enable-config",
                     "--fallback-style=llvm",
+                    "--header-insertion=never",
+                    "--malloc-trim",
+                    "--pch-storage=disk",
                     "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true",
                 },
