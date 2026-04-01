@@ -10,8 +10,8 @@ local function create_floating_window(lines, title)
     vim.bo[buf].modifiable = false
     vim.bo[buf].filetype = "markdown"
 
-    local width = 85
-    local height = math.min(#lines, 35)
+    local width = 90
+    local height = math.min(#lines, 40)
     
     local win = vim.api.nvim_open_win(buf, true, {
         relative = "editor",
@@ -64,11 +64,10 @@ function M.show_layout()
             return
         end
 
-        -- Flatten children and filter for fields/members recursively
+        -- Flatten children recursively
         local candidates = {}
         local function collect_candidates(nodes)
             for _, node in ipairs(nodes) do
-                -- Field (8), EnumMember (22), Property (7), Variable (13)
                 if node.kind == 8 or node.kind == 22 or node.kind == 7 or node.kind == 13 then
                     table.insert(candidates, node)
                 end
@@ -89,7 +88,7 @@ function M.show_layout()
         local remaining = #candidates + 1
         local alignment = 0
         local total_size = 0
-        local errors = 0
+        local error_list = {}
         
         local timer = vim.loop.new_timer()
         local function finalize()
@@ -101,7 +100,10 @@ function M.show_layout()
             if timer then timer:stop(); timer:close() end
 
             if #layout_data == 0 then
-                vim.notify("StructLayout: Clangd failed to provide layout for any members. This usually means the type is incomplete or the translation unit is not fully indexed.", vim.log.levels.ERROR)
+                local debug_msg = "Clangd returned NO layout info. Last error: " .. (error_list[1] or "Unknown")
+                vim.notify("StructLayout: " .. debug_msg, vim.log.levels.ERROR)
+                print("StructLayout Debug Info:")
+                for i, msg in ipairs(error_list) do print(string.format("  [%d] %s", i, msg)) end
                 return
             end
             
@@ -128,7 +130,7 @@ function M.show_layout()
                     table.insert(lines, string.format("| %6d | %4d | *padding* | |", last_offset + last_size, pad_size))
                 end
                 
-                table.insert(lines, string.format("| %6d | %4d | %-25s | %s |", 
+                table.insert(lines, string.format("| %6d | %4d | %-30s | %s |", 
                     item.offset, item.size, item.name, item.detail or ""))
                 
                 last_offset = item.offset
@@ -143,31 +145,35 @@ function M.show_layout()
 
             table.insert(lines, "")
             table.insert(lines, string.format("**Total Size:** %d bytes | **Alignment:** %d bytes", total_size, alignment))
-            if errors > 0 then
-                table.insert(lines, string.format("\n*Note: %d members were skipped (static or invalid layout)*", errors))
+            if #error_list > 0 then
+                table.insert(lines, string.format("\n*Note: %d members skipped. See :messages for debug details.*", #error_list))
             end
             
             create_floating_window(lines, target_node.name)
         end
 
-        -- Increase timeout to 8s for massive classes
-        timer:start(8000, 0, vim.schedule_wrap(function()
+        -- Increased timeout for deep analysis
+        timer:start(10000, 0, vim.schedule_wrap(function()
             if remaining > 0 then
+                table.insert(error_list, "Timeout reached before all members were analyzed.")
                 remaining = 1
                 finalize()
             end
         end))
 
-        -- Helper to get layout for a symbol
+        -- Helper to get layout for a symbol with deep logging
         local function get_layout(node, is_container, callback)
-            -- Use selectionRange.start for the symbol name position
             local pos = node.selectionRange.start
             local symbol_params = {
                 textDocument = params.textDocument,
                 position = pos
             }
             
-            vim.lsp.buf_request(0, "textDocument/symbolInfo", symbol_params, function(_, res)
+            vim.lsp.buf_request(0, "textDocument/symbolInfo", symbol_params, function(err, res)
+                if err then
+                    table.insert(error_list, string.format("LSP error for '%s': %s", node.name, vim.inspect(err)))
+                end
+
                 if res and res[1] and res[1].layout then
                     callback(res[1].layout)
                 else
@@ -177,6 +183,9 @@ function M.show_layout()
                         if res2 and res2[1] and res2[1].layout then
                             callback(res2[1].layout)
                         else
+                            local reason = "No 'layout' field in clangd/symbolInfo response"
+                            if res2 and res2[1] then reason = "Found symbol but layout was missing" end
+                            table.insert(error_list, string.format("Failed '%s' at %d:%d - %s", node.name, pos.line, pos.character, reason))
                             callback(nil)
                         end
                     end)
@@ -204,7 +213,7 @@ function M.show_layout()
                         size = layout.size or 0
                     })
                 else
-                    errors = errors + 1
+                    -- Already logged in get_layout
                 end
                 finalize()
             end)
