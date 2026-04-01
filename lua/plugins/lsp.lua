@@ -78,6 +78,7 @@ return {
                             SentenceCapitalization = false,
                             LongSentences = false,
                             SpelledNumbers = false,
+                            ExpandParameter = false,
                         },
                         codeActions = { ForceStable = true },
                         diagnosticSeverity = "hint",
