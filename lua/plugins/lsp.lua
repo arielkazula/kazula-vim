@@ -120,6 +120,26 @@ return {
             require("clangd_extensions").setup({
                 extensions = { autoSetHints = true, inlay_hints = { inline = false } },
                 symbol_info = { border = "rounded" },
+                ast = {
+                    role_icons = {
+                        type = "",
+                        declaration = "",
+                        expression = "",
+                        statement = "",
+                        specifier = "",
+                        ["template argument"] = "",
+                    },
+                    kind_icons = {
+                        Compound = "",
+                        Recovery = "",
+                        TranslationUnit = "",
+                        PackExpansion = "",
+                        TemplateTypeParm = "",
+                        TemplateTemplateParm = "",
+                        TemplateParamObject = "",
+                    },
+                },
+                memory_usage = { border = "rounded" },
             })
         end,
     },
