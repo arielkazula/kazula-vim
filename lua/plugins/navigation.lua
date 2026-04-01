@@ -9,6 +9,11 @@ return {
     dependencies = { "nvim-tree/nvim-web-devicons" },
     cmd = "FzfLua",
     opts = {
+        keymap = {
+            fzf = {
+                ["ctrl-q"] = "select-all+accept",
+            },
+        },
         winopts = {
             height = 0.85,
             width = 0.80,
