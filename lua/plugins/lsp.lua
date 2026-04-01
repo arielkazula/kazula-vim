@@ -57,22 +57,12 @@ return {
                     "compile_commands.json", "compile_flags.txt",
                     "configure.ac", ".git",
                 },
-                capabilities = {
-                    offsetEncoding = { "utf-16" },
-                    textDocument = {
-                        completion = {
-                            completionItem = {
-                                snippetSupport = true,
-                            },
-                        },
-                    },
-                },
                 cmd = {
                     "clangd", "-j=12", "--background-index", "--background-index-priority=normal",
                     "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
                     "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
-                    "--limit-results=0", -- Remove results limit for references
+                    "--limit-results=0",
                 },
             })
 
