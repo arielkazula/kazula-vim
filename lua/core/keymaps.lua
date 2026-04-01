@@ -153,6 +153,8 @@ wk.add({
     { "]e", function() goto_next_diagnostic(vim.diagnostic.severity.ERROR) end, desc = "Next Error" },
     { "[w", function() goto_prev_diagnostic(vim.diagnostic.severity.WARN) end, desc = "Prev Warning" },
     { "]w", function() goto_next_diagnostic(vim.diagnostic.severity.WARN) end, desc = "Next Warning" },
+    { "[q", "<cmd>cprev<cr>", desc = "Prev Quickfix" },
+    { "]q", "<cmd>cnext<cr>", desc = "Next Quickfix" },
     { "[t", function() require("todo-comments").jump_prev({ keywords = { "TODO" } }) end, desc = "Prev TODO" },
     { "]t", function() require("todo-comments").jump_next({ keywords = { "TODO" } }) end, desc = "Next TODO" },
     
