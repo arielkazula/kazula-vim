@@ -10,8 +10,8 @@ local function create_floating_window(lines, title)
     vim.bo[buf].modifiable = false
     vim.bo[buf].filetype = "markdown"
 
-    local width = 80
-    local height = math.min(#lines, 30)
+    local width = 85
+    local height = math.min(#lines, 35)
     
     local win = vim.api.nvim_open_win(buf, true, {
         relative = "editor",
@@ -33,15 +33,15 @@ end
 function M.show_layout()
     local params = vim.lsp.util.make_position_params(0, "utf-16")
     
-    -- 1. Get the symbol at cursor to see if it's a struct/class or a member
+    -- 1. Get the symbol at cursor
     vim.lsp.buf_request(0, "textDocument/documentSymbol", params, function(err, symbols)
         if err or not symbols then 
-            vim.notify("Could not fetch document symbols", vim.log.levels.WARN)
+            vim.notify("StructLayout: Could not fetch document symbols", vim.log.levels.ERROR)
             return 
         end
 
         local cursor = vim.api.nvim_win_get_cursor(0)
-        local line, col = cursor[1] - 1, cursor[2]
+        local line = cursor[1] - 1
 
         -- Find the struct/class containing the cursor
         local target_node = nil
@@ -53,7 +53,6 @@ function M.show_layout()
                     if node.kind == 5 or node.kind == 23 then
                         target_node = node
                     end
-                    -- Recurse if children exist (to find nested structs)
                     if node.children then find_container(node.children) end
                 end
             end
@@ -61,35 +60,38 @@ function M.show_layout()
         find_container(symbols)
 
         if not target_node then
-            vim.notify("Cursor is not inside a struct or class", vim.log.levels.INFO)
+            vim.notify("StructLayout: Cursor is not inside a struct or class", vim.log.levels.INFO)
             return
         end
 
-        -- Flatten children and filter for fields/members
+        -- Flatten children and filter for fields/members recursively
+        -- Some symbols might be wrapped in access specifier blocks or anonymous unions
         local candidates = {}
-        local function collect_candidates(node)
-            if not node.children then return end
-            for _, child in ipairs(node.children) do
+        local function collect_candidates(nodes)
+            for _, node in ipairs(nodes) do
                 -- Field (8), EnumMember (22), Property (7), Variable (13)
-                -- We include more kinds because some members might be reported differently
-                if child.kind == 8 or child.kind == 22 or child.kind == 7 or child.kind == 13 then
-                    table.insert(candidates, child)
+                if node.kind == 8 or node.kind == 22 or node.kind == 7 or node.kind == 13 then
+                    table.insert(candidates, node)
                 end
-                -- We don't recurse here because we only want immediate members of the target class
+                -- Recursively look for members (in case of anonymous unions or specifier blocks)
+                if node.children then collect_candidates(node.children) end
             end
         end
-        collect_candidates(target_node)
+        collect_candidates(target_node.children or {})
 
         if #candidates == 0 then
-            vim.notify("No members found in " .. target_node.name, vim.log.levels.INFO)
+            vim.notify("StructLayout: No data members found in " .. target_node.name, vim.log.levels.INFO)
             return
         end
+
+        vim.notify(string.format("StructLayout: Analyzing %d members in %s...", #candidates, target_node.name), vim.log.levels.INFO)
 
         -- 2. Query symbolInfo for the container and each candidate
         local layout_data = {}
         local remaining = #candidates + 1
         local alignment = 0
         local total_size = 0
+        local errors = 0
         
         local timer = vim.loop.new_timer()
         local function finalize()
@@ -101,7 +103,7 @@ function M.show_layout()
             if timer then timer:stop(); timer:close() end
 
             if #layout_data == 0 then
-                vim.notify("Could not retrieve layout information from clangd", vim.log.levels.WARN)
+                vim.notify("StructLayout: Clangd failed to provide layout for any members. Check for compilation errors.", vim.log.levels.ERROR)
                 return
             end
             
@@ -128,7 +130,7 @@ function M.show_layout()
                     table.insert(lines, string.format("| %6d | %4d | *padding* | |", last_offset + last_size, pad_size))
                 end
                 
-                table.insert(lines, string.format("| %6d | %4d | %-20s | %s |", 
+                table.insert(lines, string.format("| %6d | %4d | %-25s | %s |", 
                     item.offset, item.size, item.name, item.detail or ""))
                 
                 last_offset = item.offset
@@ -143,12 +145,15 @@ function M.show_layout()
 
             table.insert(lines, "")
             table.insert(lines, string.format("**Total Size:** %d bytes | **Alignment:** %d bytes", total_size, alignment))
+            if errors > 0 then
+                table.insert(lines, string.format("\n*Warning: %d members could not be analyzed (might be static or invalid)*", errors))
+            end
             
             create_floating_window(lines, target_node.name)
         end
 
-        -- Force finalize after 3 seconds for large classes
-        timer:start(3000, 0, vim.schedule_wrap(function()
+        -- Increase timeout to 5s for very large classes
+        timer:start(5000, 0, vim.schedule_wrap(function()
             if remaining > 0 then
                 remaining = 1
                 finalize()
@@ -175,7 +180,7 @@ function M.show_layout()
                 position = cand.selectionRange.start
             }
             vim.lsp.buf_request(0, "textDocument/symbolInfo", cand_params, function(_, res)
-                -- Only include if it has a valid layout (excludes static members which have no offset/size in record)
+                local success = false
                 if res and res[1] and res[1].layout and res[1].layout.offset ~= nil then
                     table.insert(layout_data, {
                         name = cand.name,
@@ -183,7 +188,9 @@ function M.show_layout()
                         offset = res[1].layout.offset,
                         size = res[1].layout.size or 0
                     })
+                    success = true
                 end
+                if not success then errors = errors + 1 end
                 finalize()
             end)
         end
