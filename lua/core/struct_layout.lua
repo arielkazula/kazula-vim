@@ -31,7 +31,7 @@ local function create_floating_window(lines, title)
 end
 
 function M.show_layout()
-    local params = vim.lsp.util.make_position_params()
+    local params = vim.lsp.util.make_position_params(0, "utf-16")
     
     -- 1. Get the symbol at cursor to see if it's a struct/class or a member
     vim.lsp.buf_request(0, "textDocument/documentSymbol", params, function(err, symbols)
