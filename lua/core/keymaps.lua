@@ -45,8 +45,8 @@ wk.add({
 
     -- Group: [c]ode
     { "<leader>c", group = "code", icon = { icon = "󰅩 ", color = "yellow" } },
-    { "gd", "<cmd>FzfLua lsp_definitions jump1=true ignore_current_line=true<cr>", desc = "Goto Definition" },
-    { "grr", "<cmd>FzfLua lsp_references jump1=true ignore_current_line=true<cr>", desc = "References (FZF)" },
+    { "gd", "<cmd>FzfLua lsp_definitions jump1=true<cr>", desc = "Goto Definition" },
+    { "grr", "<cmd>FzfLua lsp_references jump1=true<cr>", desc = "References (FZF)" },
     { "gri", "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>", desc = "Goto Implementation" },
     { "gy", "<cmd>FzfLua lsp_typedefs jump1=true ignore_current_line=true<cr>", desc = "Goto Type Definition" },
     { "gra", function() vim.lsp.buf.code_action() end, desc = "Code Action" },
