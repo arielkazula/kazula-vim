@@ -81,9 +81,19 @@ function M.show_layout()
         local layout_data = {}
         local remaining = #fields + 1
         
+        local timer = vim.loop.new_timer()
         local function finalize()
+            if remaining == -1 then return end -- Already finalized
             remaining = remaining - 1
             if remaining > 0 then return end
+            
+            remaining = -1 -- Mark as done
+            if timer then timer:stop(); timer:close() end
+
+            if #layout_data == 0 then
+                vim.notify("Could not retrieve layout information from clangd", vim.log.levels.WARN)
+                return
+            end
             
             -- Sort fields by offset
             table.sort(layout_data, function(a, b) 
@@ -131,6 +141,14 @@ function M.show_layout()
             
             create_floating_window(lines, target_node.name)
         end
+
+        -- Force finalize after 2 seconds if some requests are stuck
+        timer:start(2000, 0, vim.schedule_wrap(function()
+            if remaining > 0 then
+                remaining = 1
+                finalize()
+            end
+        end))
 
         -- Request for container
         local container_params = {
