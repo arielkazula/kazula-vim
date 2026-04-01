@@ -41,28 +41,24 @@ function M.smart_references()
     end
 
     if #file_list == 0 then
-        vim.notify("SmartRef: No files found via grep. Falling back to standard LSP...", vim.log.levels.WARN)
+        vim.notify("SmartRef: No files found via grep. Using standard LSP...", vim.log.levels.WARN)
         require('fzf-lua').lsp_references()
         return
     end
 
     -- 2. Inject context into Clangd
     local inject_count = 0
-    local max_inject = 15 -- Limit to prevent server lag
+    local max_inject = 15 
     
     for _, file_path in ipairs(file_list) do
         local abs_path = vim.fn.fnamemodify(file_path, ":p")
         local uri = vim.uri_from_fname(abs_path)
         
-        -- Check if Clangd already knows about this file
-        -- We use a hacky way to check "active" documents if possible, 
-        -- but didOpen is idempotent so we can just send it.
         local ok, lines = pcall(vim.fn.readfile, abs_path)
         if ok and lines then
             local content = table.concat(lines, "\n")
             local ft = vim.filetype.match({ filename = abs_path }) or "cpp"
             
-            -- didOpen MUST have version and text
             clangd.notify("textDocument/didOpen", {
                 textDocument = {
                     uri = uri,
@@ -77,19 +73,37 @@ function M.smart_references()
         if inject_count >= max_inject then break end
     end
 
-    vim.notify(string.format("SmartRef: Injected %d files into Clangd. Waiting for parse...", inject_count), vim.log.levels.INFO)
+    vim.notify(string.format("SmartRef: Injected %d files. Requesting references...", inject_count), vim.log.levels.INFO)
 
-    -- 3. Run LSP references after a delay
+    -- 3. Run LSP references
+    -- We'll use a slightly longer delay and try a direct LSP request first to verify data
     vim.defer_fn(function()
         vim.schedule(function()
-            vim.notify("SmartRef: Querying Clangd for semantic references...", vim.log.levels.INFO)
-            require('fzf-lua').lsp_references({
-                include_declaration = true,
-                jump1 = true,
-                winopts = { title = " Smart References: " .. word .. " " }
-            })
+            local params = vim.lsp.util.make_position_params(0, "utf-16")
+            params.context = { includeDeclaration = true }
+            
+            clangd.request("textDocument/references", params, function(err, result)
+                if err then
+                    vim.notify("SmartRef LSP Error: " .. err.message, vim.log.levels.ERROR)
+                    return
+                end
+                
+                if not result or #result == 0 then
+                    vim.notify("SmartRef: Clangd found 0 semantic references. Is indexing complete?", vim.log.levels.WARN)
+                    return
+                end
+                
+                vim.notify(string.format("SmartRef: Found %d references. Opening picker...", #result), vim.log.levels.INFO)
+                
+                -- Now that we HAVE results, use fzf-lua to show them
+                require('fzf-lua').lsp_references({
+                    include_declaration = true,
+                    jump1 = true,
+                    winopts = { title = " Smart References: " .. word .. " " }
+                })
+            end, bufnr)
         end)
-    end, 1200) -- Increased delay for large files
+    end, 1500) 
 end
 
 return M
