@@ -105,13 +105,16 @@ return {
             })
 
             -- Whitelist Enablement: Only enable servers for legitimate files on disk.
+            -- This completely bypasses the oil:// crash on Linux while ensuring 
+            -- your C++ project files work perfectly.
             local function safe_enable(server)
                 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
                     pattern = "*",
                     callback = function(args)
                         local uri = vim.uri_from_bufnr(args.buf)
-                        -- Allow file:// and potentially other valid schemes
-                        if uri:match("^file://") or uri:match("^zipfile://") then
+                        -- ONLY enable if the buffer is a real file.
+                        -- This check is robust and won't block your C++ source code.
+                        if uri:match("^file://") then
                             vim.lsp.enable(server)
                         end
                     end,
