@@ -51,7 +51,7 @@ return {
                     "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
                     "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
-                    "--limit-results=0",
+                    "--limit-results=0", "--header-insertion-decorators=false",
                 },
             })
 
