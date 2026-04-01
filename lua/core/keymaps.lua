@@ -56,6 +56,7 @@ wk.add({
     { "<leader>cl", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
     { "<leader>cr", vim.lsp.buf.rename, desc = "Rename symbol" },
     { "<leader>ca", function() vim.lsp.buf.code_action() end, desc = "Code Actions" },
+    { "<leader>cv", "<cmd>ClangdSymbolInfo<CR>", desc = "View Symbol Layout (Size/Offset)" },
     { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>", desc = "Switch Header/Source (C++)" },
     { "<leader>cn", function() require("neogen").generate() end, desc = "Generate Annotations" },
     { "<leader>cs", function() require("fzf-lua").lsp_document_symbols() end, desc = "Document Symbols" },
