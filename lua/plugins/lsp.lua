@@ -119,6 +119,7 @@ return {
             
             require("clangd_extensions").setup({
                 extensions = { autoSetHints = true, inlay_hints = { inline = false } },
+                symbol_info = { border = "rounded" },
             })
         end,
     },
