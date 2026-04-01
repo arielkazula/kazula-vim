@@ -4,17 +4,22 @@
 local M = {}
 
 --- Smart Contextual References
--- This function finds all files containing the word under cursor via Ripgrep,
--- forces clangd to "load" them as active context, and then asks for references.
--- This ensures clangd sees the semantic links even if background indexing is slow.
+-- Finds files via Ripgrep, "injects" them into Clangd's active memory 
+-- via didOpen notifications, and then runs semantic references.
 function M.smart_references()
     local word = vim.fn.expand("<cword>")
     if word == "" then return end
 
-    vim.notify("SmartRef: Injecting context for '" .. word .. "'...", vim.log.levels.INFO)
+    local bufnr = vim.api.nvim_get_current_buf()
+    local clients = vim.lsp.get_clients({ bufnr = bufnr, name = "clangd" })
+    local clangd = clients[1]
 
-    -- 1. Use Ripgrep to find files that mention this word (fast)
-    -- We only care about file paths (-l)
+    if not clangd then
+        vim.notify("SmartRef: Clangd not attached.", vim.log.levels.ERROR)
+        return
+    end
+
+    -- 1. Use Ripgrep to find potential files
     local cmd = string.format("rg -l --fixed-strings --word-regexp '%s'", word)
     local handle = io.popen(cmd)
     if not handle then return end
@@ -27,39 +32,53 @@ function M.smart_references()
     end
 
     if #file_list == 0 then
-        vim.notify("SmartRef: No files found containing word.", vim.log.levels.WARN)
+        vim.notify("SmartRef: No files found via grep.", vim.log.levels.WARN)
         return
     end
 
-    -- 2. "Warm up" Clangd by simulating opening these files
-    -- We don't actually open buffers (too slow), we just notify the LSP
-    -- that these files are now "active" in our workspace context.
-    local count = 0
+    -- 2. Inject context into Clangd
+    -- We tell Clangd we "opened" these files so it parses them immediately.
+    local inject_count = 0
+    local max_inject = 20 -- Limit to 20 files to prevent RPC flood
+    
     for _, file_path in ipairs(file_list) do
         local abs_path = vim.fn.fnamemodify(file_path, ":p")
+        
+        -- Only inject if not already managed by LSP
         local uri = vim.uri_from_fname(abs_path)
+        if not vim.lsp.get_buffers_by_client_id(clangd.id)[uri] then
+            -- Read file content (synchronous but usually fast for source files)
+            local ok, lines = pcall(vim.fn.readfile, abs_path)
+            if ok and lines then
+                local content = table.concat(lines, "\n")
+                local ft = vim.filetype.match({ filename = abs_path }) or "cpp"
+                
+                -- Send didOpen notification (no response expected)
+                clangd.notify("textDocument/didOpen", {
+                    textDocument = {
+                        uri = uri,
+                        languageId = ft,
+                        version = 1,
+                        text = content
+                    }
+                })
+                inject_count = inject_count + 1
+            end
+        end
         
-        -- We send a dummy request or just ensure clangd is aware of the file
-        -- Triggering a documentSymbol request is a lightweight way to force 
-        -- clangd to parse the file and link its symbols.
-        vim.lsp.buf_request(0, "textDocument/documentSymbol", {
-            textDocument = { uri = uri }
-        }, function() end)
-        
-        count = count + 1
-        if count > 50 then break end -- Limit to 50 files to prevent LSP overload
+        if inject_count >= max_inject then break end
     end
 
-    -- 3. Now run the actual LSP references request
-    -- Since we "poked" clangd about the relevant files, it's much more
-    -- likely to have the semantic context ready.
+    vim.notify(string.format("SmartRef: Injected %d files into Clangd context...", inject_count), vim.log.levels.INFO)
+
+    -- 3. Run LSP references after a short delay to allow parsing
     vim.defer_fn(function()
         require('fzf-lua').lsp_references({
             include_declaration = true,
             jump1 = true,
-            winopts = { title = " Smart LSP References: " .. word .. " " }
+            winopts = { title = " Smart Contextual References: " .. word .. " " }
         })
-    end, 500) -- Small delay to allow LSP to process the "pokes"
+    end, 800) 
 end
 
 return M
