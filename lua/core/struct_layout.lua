@@ -65,7 +65,6 @@ function M.show_layout()
         end
 
         -- Flatten children and filter for fields/members recursively
-        -- Some symbols might be wrapped in access specifier blocks or anonymous unions
         local candidates = {}
         local function collect_candidates(nodes)
             for _, node in ipairs(nodes) do
@@ -73,7 +72,6 @@ function M.show_layout()
                 if node.kind == 8 or node.kind == 22 or node.kind == 7 or node.kind == 13 then
                     table.insert(candidates, node)
                 end
-                -- Recursively look for members (in case of anonymous unions or specifier blocks)
                 if node.children then collect_candidates(node.children) end
             end
         end
@@ -103,7 +101,7 @@ function M.show_layout()
             if timer then timer:stop(); timer:close() end
 
             if #layout_data == 0 then
-                vim.notify("StructLayout: Clangd failed to provide layout for any members. Check for compilation errors.", vim.log.levels.ERROR)
+                vim.notify("StructLayout: Clangd failed to provide layout for any members. This usually means the type is incomplete or the translation unit is not fully indexed.", vim.log.levels.ERROR)
                 return
             end
             
@@ -146,51 +144,68 @@ function M.show_layout()
             table.insert(lines, "")
             table.insert(lines, string.format("**Total Size:** %d bytes | **Alignment:** %d bytes", total_size, alignment))
             if errors > 0 then
-                table.insert(lines, string.format("\n*Warning: %d members could not be analyzed (might be static or invalid)*", errors))
+                table.insert(lines, string.format("\n*Note: %d members were skipped (static or invalid layout)*", errors))
             end
             
             create_floating_window(lines, target_node.name)
         end
 
-        -- Increase timeout to 5s for very large classes
-        timer:start(5000, 0, vim.schedule_wrap(function()
+        -- Increase timeout to 8s for massive classes
+        timer:start(8000, 0, vim.schedule_wrap(function()
             if remaining > 0 then
                 remaining = 1
                 finalize()
             end
         end))
 
-        -- Request for container to get total size and alignment
-        local container_params = {
-            textDocument = params.textDocument,
-            position = target_node.selectionRange.start
-        }
-        vim.lsp.buf_request(0, "textDocument/symbolInfo", container_params, function(_, res)
-            if res and res[1] and res[1].layout then
-                alignment = res[1].layout.alignment or 0
-                total_size = res[1].layout.size or 0
+        -- Helper to get layout for a symbol
+        local function get_layout(node, is_container, callback)
+            -- Use selectionRange.start for the symbol name position
+            local pos = node.selectionRange.start
+            local symbol_params = {
+                textDocument = params.textDocument,
+                position = pos
+            }
+            
+            vim.lsp.buf_request(0, "textDocument/symbolInfo", symbol_params, function(_, res)
+                if res and res[1] and res[1].layout then
+                    callback(res[1].layout)
+                else
+                    -- Fallback: If symbolInfo fails at selectionRange, try the start of the full range
+                    symbol_params.position = node.range.start
+                    vim.lsp.buf_request(0, "textDocument/symbolInfo", symbol_params, function(_, res2)
+                        if res2 and res2[1] and res2[1].layout then
+                            callback(res2[1].layout)
+                        else
+                            callback(nil)
+                        end
+                    end)
+                end
+            end)
+        end
+
+        -- Request for container
+        get_layout(target_node, true, function(layout)
+            if layout then
+                alignment = layout.alignment or 0
+                total_size = layout.size or 0
             end
             finalize()
         end)
 
         -- Request for each candidate
         for _, cand in ipairs(candidates) do
-            local cand_params = {
-                textDocument = params.textDocument,
-                position = cand.selectionRange.start
-            }
-            vim.lsp.buf_request(0, "textDocument/symbolInfo", cand_params, function(_, res)
-                local success = false
-                if res and res[1] and res[1].layout and res[1].layout.offset ~= nil then
+            get_layout(cand, false, function(layout)
+                if layout and layout.offset ~= nil then
                     table.insert(layout_data, {
                         name = cand.name,
                         detail = cand.detail or "",
-                        offset = res[1].layout.offset,
-                        size = res[1].layout.size or 0
+                        offset = layout.offset,
+                        size = layout.size or 0
                     })
-                    success = true
+                else
+                    errors = errors + 1
                 end
-                if not success then errors = errors + 1 end
                 finalize()
             end)
         end
