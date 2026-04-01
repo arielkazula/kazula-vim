@@ -45,13 +45,6 @@ return {
             -- Server-specific overrides using native vim.lsp.config
             vim.lsp.config("clangd", {
                 filetypes = { "c", "cpp", "cc", "h", "hpp", "objc", "objcpp", "cuda", "proto" },
-                root_dir = function(fname)
-                    return vim.fs.root(fname, {
-                        ".clangd", ".clang-tidy", ".clang-format",
-                        "compile_commands.json", "compile_flags.txt",
-                        "configure.ac", ".git",
-                    })
-                end,
                 root_markers = {
                     ".clangd", ".clang-tidy", ".clang-format",
                     "compile_commands.json", "compile_flags.txt",
@@ -62,7 +55,6 @@ return {
                     "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
                     "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
-                    "--limit-results=0",
                 },
             })
 
