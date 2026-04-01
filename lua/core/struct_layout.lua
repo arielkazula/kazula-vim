@@ -1,6 +1,6 @@
 -- lua/core/struct_layout.lua ----------------------------------------------
 -- A specialized tool to visualize C++ struct/class memory layout.
--- This queries clangd's symbolInfo for member layouts.
+-- This queries clangd's symbolInfo for member layouts with deep debugging.
 
 local M = {}
 
@@ -31,12 +31,21 @@ local function create_floating_window(lines, title)
 end
 
 function M.show_layout()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local clients = vim.lsp.get_clients({ bufnr = bufnr, name = "clangd" })
+    local clangd = clients[1]
+
+    if not clangd then
+        vim.notify("StructLayout: Clangd is not attached to this buffer", vim.log.levels.ERROR)
+        return
+    end
+
     local params = vim.lsp.util.make_position_params(0, "utf-16")
     
-    -- Try to "wake up" clangd by requesting document symbols first
-    vim.lsp.buf_request(0, "textDocument/documentSymbol", params, function(err, symbols)
+    -- 1. Get the symbol at cursor
+    clangd.request("textDocument/documentSymbol", params, function(err, symbols)
         if err or not symbols then 
-            vim.notify("StructLayout: Could not fetch document symbols. Is the LSP ready?", vim.log.levels.ERROR)
+            vim.notify("StructLayout: Could not fetch document symbols", vim.log.levels.ERROR)
             return 
         end
 
@@ -67,7 +76,6 @@ function M.show_layout()
         local candidates = {}
         local function collect_candidates(nodes)
             for _, node in ipairs(nodes) do
-                -- Field, EnumMember, Property, Variable
                 if node.kind == 8 or node.kind == 22 or node.kind == 7 or node.kind == 13 then
                     table.insert(candidates, node)
                 end
@@ -100,9 +108,9 @@ function M.show_layout()
             if timer then timer:stop(); timer:close() end
 
             if #layout_data == 0 then
-                vim.notify("StructLayout: Clangd returned no layout data. Check :messages for LSP errors.", vim.log.levels.ERROR)
-                print("StructLayout Errors:")
-                for _, msg in ipairs(error_log) do print("  " .. msg) end
+                vim.notify("StructLayout: No layout data. Check :messages for full debug dump.", vim.log.levels.ERROR)
+                print("StructLayout Full Debug Dump:")
+                for _, msg in ipairs(error_log) do print(msg) end
                 return
             end
             
@@ -142,40 +150,42 @@ function M.show_layout()
             create_floating_window(lines, target_node.name)
         end
 
-        timer:start(12000, 0, vim.schedule_wrap(function()
+        timer:start(15000, 0, vim.schedule_wrap(function()
             if remaining > 0 then
-                table.insert(error_log, "TIMEOUT: Clangd is taking too long (Indexing?)")
+                table.insert(error_log, "TIMEOUT: Clangd response delayed.")
                 remaining = 1
                 finalize()
             end
         end))
 
-        -- The core layout fetcher
+        -- Helper to get layout directly from the clangd client
         local function get_layout(node, callback)
             local pos = node.selectionRange.start
             local lsp_params = { textDocument = params.textDocument, position = pos }
             
-            -- Use the clangd/ prefix which is the correct one for clangd-specific methods
-            vim.lsp.buf_request(0, "clangd/symbolInfo", lsp_params, function(err, res)
-                if not err and res and res.layout then
-                    -- Note: clangd/symbolInfo usually returns a single object, not a list
-                    callback(res.layout)
-                elseif not err and res and res[1] and res[1].layout then
-                    -- Some versions return a list
-                    callback(res[1].layout)
-                else
-                    -- If clangd/ fails, try textDocument/symbolInfo just in case
-                    vim.lsp.buf_request(0, "textDocument/symbolInfo", lsp_params, function(err2, res2)
-                        if not err2 and res2 and res2[1] and res2[1].layout then
+            -- Clangd 16+ uses textDocument/symbolInfo
+            clangd.request("textDocument/symbolInfo", lsp_params, function(err, res)
+                if err then
+                    table.insert(error_log, string.format("ERROR [%s]: %s (code: %s)", node.name, err.message, err.code))
+                    -- Try clangd/symbolInfo as last resort
+                    clangd.request("clangd/symbolInfo", lsp_params, function(err2, res2)
+                        if not err2 and res2 and res2.layout then
+                            callback(res2.layout)
+                        elseif not err2 and res2 and res2[1] and res2[1].layout then
                             callback(res2[1].layout)
                         else
-                            local msg = string.format("Failed '%s': %s", node.name, err and err.message or "No layout field")
-                            table.insert(error_log, msg)
                             callback(nil)
                         end
                     end)
+                elseif res and res[1] and res[1].layout then
+                    callback(res[1].layout)
+                elseif res and res.layout then
+                    callback(res.layout)
+                else
+                    table.insert(error_log, string.format("MISSING [%s]: Response was: %s", node.name, vim.inspect(res)))
+                    callback(nil)
                 end
-            end)
+            end, bufnr)
         end
 
         -- Request for container
@@ -201,7 +211,7 @@ function M.show_layout()
                 finalize()
             end)
         end
-    end)
+    end, bufnr)
 end
 
 return M
