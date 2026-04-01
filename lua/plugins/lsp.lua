@@ -45,10 +45,12 @@ return {
             -- Server-specific overrides using native vim.lsp.config
             vim.lsp.config("clangd", {
                 filetypes = { "c", "cpp", "cc", "h", "hpp", "objc", "objcpp", "cuda", "proto" },
-                root_markers = {
-                    "compile_commands.json", ".clangd", ".clang-tidy", ".clang-format",
-                    "configure.ac", ".git",
-                },
+                root_markers = { ".git", "compile_commands.json", ".clangd" },
+                -- Explicitly set the root to the first marker found in the hierarchy
+                root_dir = function(fname)
+                    local root = vim.fs.root(fname, { ".git", "compile_commands.json" })
+                    return root or vim.fn.getcwd()
+                end,
                 cmd = {
                     "clangd", "-j=12", "--background-index", "--background-index-priority=normal",
                     "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
