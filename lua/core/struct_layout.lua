@@ -1,6 +1,6 @@
 -- lua/core/struct_layout.lua ----------------------------------------------
 -- A specialized tool to visualize C++ struct/class memory layout.
--- This queries clangd's symbolInfo for every member to build a layout table.
+-- This queries clangd's symbolInfo for member layouts.
 
 local M = {}
 
@@ -10,8 +10,8 @@ local function create_floating_window(lines, title)
     vim.bo[buf].modifiable = false
     vim.bo[buf].filetype = "markdown"
 
-    local width = 90
-    local height = math.min(#lines, 40)
+    local width = 95
+    local height = math.min(#lines, 45)
     
     local win = vim.api.nvim_open_win(buf, true, {
         relative = "editor",
@@ -33,10 +33,10 @@ end
 function M.show_layout()
     local params = vim.lsp.util.make_position_params(0, "utf-16")
     
-    -- 1. Get the symbol at cursor
+    -- Try to "wake up" clangd by requesting document symbols first
     vim.lsp.buf_request(0, "textDocument/documentSymbol", params, function(err, symbols)
         if err or not symbols then 
-            vim.notify("StructLayout: Could not fetch document symbols", vim.log.levels.ERROR)
+            vim.notify("StructLayout: Could not fetch document symbols. Is the LSP ready?", vim.log.levels.ERROR)
             return 
         end
 
@@ -49,7 +49,6 @@ function M.show_layout()
             for _, node in ipairs(nodes) do
                 local r = node.range or node.selectionRange
                 if r.start.line <= line and r["end"].line >= line then
-                    -- If it's a Class (5) or Struct (23)
                     if node.kind == 5 or node.kind == 23 then
                         target_node = node
                     end
@@ -68,6 +67,7 @@ function M.show_layout()
         local candidates = {}
         local function collect_candidates(nodes)
             for _, node in ipairs(nodes) do
+                -- Field, EnumMember, Property, Variable
                 if node.kind == 8 or node.kind == 22 or node.kind == 7 or node.kind == 13 then
                     table.insert(candidates, node)
                 end
@@ -81,14 +81,14 @@ function M.show_layout()
             return
         end
 
-        vim.notify(string.format("StructLayout: Analyzing %d members in %s...", #candidates, target_node.name), vim.log.levels.INFO)
+        vim.notify(string.format("StructLayout: Probing %d members in %s...", #candidates, target_node.name), vim.log.levels.INFO)
 
-        -- 2. Query symbolInfo for the container and each candidate
+        -- 2. Query each candidate
         local layout_data = {}
         local remaining = #candidates + 1
         local alignment = 0
         local total_size = 0
-        local error_list = {}
+        local error_log = {}
         
         local timer = vim.loop.new_timer()
         local function finalize()
@@ -100,19 +100,14 @@ function M.show_layout()
             if timer then timer:stop(); timer:close() end
 
             if #layout_data == 0 then
-                local debug_msg = "Clangd returned NO layout info. Last error: " .. (error_list[1] or "Unknown")
-                vim.notify("StructLayout: " .. debug_msg, vim.log.levels.ERROR)
-                print("StructLayout Debug Info:")
-                for i, msg in ipairs(error_list) do print(string.format("  [%d] %s", i, msg)) end
+                vim.notify("StructLayout: Clangd returned no layout data. Check :messages for LSP errors.", vim.log.levels.ERROR)
+                print("StructLayout Errors:")
+                for _, msg in ipairs(error_log) do print("  " .. msg) end
                 return
             end
             
-            -- Sort fields by offset
-            table.sort(layout_data, function(a, b) 
-                return (a.offset or 0) < (b.offset or 0) 
-            end)
+            table.sort(layout_data, function(a, b) return (a.offset or 0) < (b.offset or 0) end)
 
-            -- Format the output
             local lines = {
                 string.format("# Layout: %s", target_node.name),
                 "",
@@ -124,20 +119,18 @@ function M.show_layout()
             local last_size = 0
 
             for _, item in ipairs(layout_data) do
-                -- Detect padding
                 if item.offset > (last_offset + last_size) then
                     local pad_size = item.offset - (last_offset + last_size)
                     table.insert(lines, string.format("| %6d | %4d | *padding* | |", last_offset + last_size, pad_size))
                 end
                 
-                table.insert(lines, string.format("| %6d | %4d | %-30s | %s |", 
+                table.insert(lines, string.format("| %6d | %4d | %-35s | %s |", 
                     item.offset, item.size, item.name, item.detail or ""))
                 
                 last_offset = item.offset
                 last_size = item.size
             end
 
-            -- Check for trailing padding
             if total_size > (last_offset + last_size) then
                 local pad_size = total_size - (last_offset + last_size)
                 table.insert(lines, string.format("| %6d | %4d | *padding* | |", last_offset + last_size, pad_size))
@@ -145,47 +138,39 @@ function M.show_layout()
 
             table.insert(lines, "")
             table.insert(lines, string.format("**Total Size:** %d bytes | **Alignment:** %d bytes", total_size, alignment))
-            if #error_list > 0 then
-                table.insert(lines, string.format("\n*Note: %d members skipped. See :messages for debug details.*", #error_list))
-            end
             
             create_floating_window(lines, target_node.name)
         end
 
-        -- Increased timeout for deep analysis
-        timer:start(10000, 0, vim.schedule_wrap(function()
+        timer:start(12000, 0, vim.schedule_wrap(function()
             if remaining > 0 then
-                table.insert(error_list, "Timeout reached before all members were analyzed.")
+                table.insert(error_log, "TIMEOUT: Clangd is taking too long (Indexing?)")
                 remaining = 1
                 finalize()
             end
         end))
 
-        -- Helper to get layout for a symbol with deep logging
-        local function get_layout(node, is_container, callback)
+        -- The core layout fetcher
+        local function get_layout(node, callback)
             local pos = node.selectionRange.start
-            local symbol_params = {
-                textDocument = params.textDocument,
-                position = pos
-            }
+            local lsp_params = { textDocument = params.textDocument, position = pos }
             
-            vim.lsp.buf_request(0, "textDocument/symbolInfo", symbol_params, function(err, res)
-                if err then
-                    table.insert(error_list, string.format("LSP error for '%s': %s", node.name, vim.inspect(err)))
-                end
-
-                if res and res[1] and res[1].layout then
+            -- Use the clangd/ prefix which is the correct one for clangd-specific methods
+            vim.lsp.buf_request(0, "clangd/symbolInfo", lsp_params, function(err, res)
+                if not err and res and res.layout then
+                    -- Note: clangd/symbolInfo usually returns a single object, not a list
+                    callback(res.layout)
+                elseif not err and res and res[1] and res[1].layout then
+                    -- Some versions return a list
                     callback(res[1].layout)
                 else
-                    -- Fallback: If symbolInfo fails at selectionRange, try the start of the full range
-                    symbol_params.position = node.range.start
-                    vim.lsp.buf_request(0, "textDocument/symbolInfo", symbol_params, function(_, res2)
-                        if res2 and res2[1] and res2[1].layout then
+                    -- If clangd/ fails, try textDocument/symbolInfo just in case
+                    vim.lsp.buf_request(0, "textDocument/symbolInfo", lsp_params, function(err2, res2)
+                        if not err2 and res2 and res2[1] and res2[1].layout then
                             callback(res2[1].layout)
                         else
-                            local reason = "No 'layout' field in clangd/symbolInfo response"
-                            if res2 and res2[1] then reason = "Found symbol but layout was missing" end
-                            table.insert(error_list, string.format("Failed '%s' at %d:%d - %s", node.name, pos.line, pos.character, reason))
+                            local msg = string.format("Failed '%s': %s", node.name, err and err.message or "No layout field")
+                            table.insert(error_log, msg)
                             callback(nil)
                         end
                     end)
@@ -194,7 +179,7 @@ function M.show_layout()
         end
 
         -- Request for container
-        get_layout(target_node, true, function(layout)
+        get_layout(target_node, function(layout)
             if layout then
                 alignment = layout.alignment or 0
                 total_size = layout.size or 0
@@ -204,7 +189,7 @@ function M.show_layout()
 
         -- Request for each candidate
         for _, cand in ipairs(candidates) do
-            get_layout(cand, false, function(layout)
+            get_layout(cand, function(layout)
                 if layout and layout.offset ~= nil then
                     table.insert(layout_data, {
                         name = cand.name,
@@ -212,8 +197,6 @@ function M.show_layout()
                         offset = layout.offset,
                         size = layout.size or 0
                     })
-                else
-                    -- Already logged in get_layout
                 end
                 finalize()
             end)
