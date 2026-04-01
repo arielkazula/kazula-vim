@@ -51,7 +51,7 @@ return {
                     "configure.ac", ".git",
                 },
                 cmd = {
-                    "clangd", "-j=4", "--background-index", "--background-index-priority=background",
+                    "clangd", "-j=12", "--background-index", "--background-index-priority=normal",
                     "--clang-tidy", "--all-scopes-completion", "--completion-style=detailed",
                     "--header-insertion=never", "--fallback-style=llvm", "--offset-encoding=utf-16",
                     "--function-arg-placeholders=true", "--enable-config", "--malloc-trim", "--pch-storage=disk",
