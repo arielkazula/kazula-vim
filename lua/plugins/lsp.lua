@@ -45,13 +45,6 @@ return {
             -- Server-specific overrides using native vim.lsp.config
             vim.lsp.config("clangd", {
                 filetypes = { "c", "cpp", "cc", "h", "hpp", "objc", "objcpp", "cuda", "proto" },
-                root_dir = function(fname)
-                    return vim.fs.root(fname, {
-                        "compile_commands.json",
-                        ".git",
-                        ".clangd",
-                    })
-                end,
                 root_markers = {
                     "compile_commands.json", ".clangd", ".clang-tidy", ".clang-format",
                     "configure.ac", ".git",
