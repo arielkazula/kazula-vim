@@ -33,43 +33,4 @@ function M.pick_dir_then_search(picker_type)
     })
 end
 
---- A hierarchical file browser that allows "drilling down" into folders.
---- Selecting a folder refreshes the view to its contents.
---- Selecting a file opens it.
-function M.file_driller(current_dir)
-    local fzf = require('fzf-lua')
-    current_dir = current_dir or vim.uv.cwd()
-    
-    fzf.fzf_exec("ls -1p " .. current_dir, {
-        prompt = vim.fn.fnamemodify(current_dir, ":.") .. "> ",
-        winopts = { title = " Drill Down: " .. vim.fn.fnamemodify(current_dir, ":p:~") },
-        actions = {
-            ["default"] = function(selected)
-                local entry = selected[1]
-                local full_path = current_dir .. "/" .. entry
-                
-                -- Remove trailing slash for directory check
-                local clean_path = full_path:gsub("/$", "")
-                
-                if vim.fn.isdirectory(clean_path) == 1 then
-                    -- If it's a directory, drill down (recursive call)
-                    M.file_driller(clean_path)
-                else
-                    -- If it's a file, open it
-                    vim.cmd("edit " .. clean_path)
-                end
-            end,
-            -- Go back up
-            ["ctrl-u"] = function()
-                local parent = vim.fn.fnamemodify(current_dir, ":h")
-                M.file_driller(parent)
-            end,
-            -- Switch to recursive search in this folder
-            ["ctrl-s"] = function()
-                fzf.files({ cwd = current_dir, winopts = { title = " Recursive Search: " .. current_dir } })
-            end
-        }
-    })
-end
-
 return M
