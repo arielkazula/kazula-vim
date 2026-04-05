@@ -83,25 +83,41 @@ return {
                 },
             })
 
-            -- Whitelist Enablement: Only enable servers for legitimate files on disk.
-            -- This completely bypasses the oil:// crash on Linux while ensuring 
-            -- your C++ project files work perfectly.
-            local function safe_enable(server)
+            --- Activates an LSP server only for its supported file types and on real files.
+            --- This prevents crashes on virtual file systems (like oil://) and 
+            --- avoids unnecessary LSP overhead in unrelated buffers.
+            --- @param server_name string The name of the LSP server to enable.
+            local function safe_enable_lsp_server(server_name)
+                -- Retrieve the server's configuration from nvim-lspconfig to get supported filetypes.
+                local server_config = require("lspconfig.configs")[server_name]
+                local supported_filetypes = (server_config and server_config.filetypes) or { "*" }
+
                 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
                     pattern = "*",
-                    callback = function(args)
-                        local uri = vim.uri_from_bufnr(args.buf)
-                        -- ONLY enable if the buffer is a real file.
-                        -- This check is robust and won't block your C++ source code.
-                        if uri:match("^file://") then
-                            vim.lsp.enable(server)
+                    callback = function(event_args)
+                        local buffer_number = event_args.buf
+                        local buffer_uri = vim.uri_from_bufnr(buffer_number)
+
+                        -- ONLY enable if the buffer is a real file (starts with file://).
+                        -- This avoids issues with virtual buffers like Oil or Telescope.
+                        if buffer_uri:match("^file://") then
+                            local current_buffer_filetype = vim.bo[buffer_number].filetype
+
+                            -- Only enable if the current filetype is in the server's supported list,
+                            -- or if the server supports all filetypes ("*").
+                            local is_supported = vim.tbl_contains(supported_filetypes, current_buffer_filetype)
+                                or vim.tbl_contains(supported_filetypes, "*")
+
+                            if is_supported then
+                                vim.lsp.enable(server_name)
+                            end
                         end
                     end,
                 })
             end
 
-            for _, server in ipairs(mlsp.get_installed_servers()) do
-                safe_enable(server)
+            for _, server_name in ipairs(mlsp.get_installed_servers()) do
+                safe_enable_lsp_server(server_name)
             end
         end,
     },
