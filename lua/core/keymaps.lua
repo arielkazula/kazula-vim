@@ -133,6 +133,7 @@ wk.add({
     { "<leader>s", group = "search", icon = { icon = "󰍉 ", color = "cyan" } },
     { "<leader>sg", function() require("fzf-lua").live_grep() end, desc = "Live Grep" },
     { "<leader>sw", function() require("fzf-lua").grep_cword() end, desc = "Search Word" },
+    { "<leader>sq", function() require("core.fzf_quick_sheet").show_quick_sheet() end, desc = "Search Quick Sheet" },
     { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace" },
     { "<leader>sf", ":RipSubstitute<cr>", desc = "Rip Substitute" },
     { "<leader>st", "<cmd>TodoFzfLua keywords=TODO<cr>", desc = "Search Project TODOs" },
