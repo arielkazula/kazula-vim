@@ -9,14 +9,11 @@ return {
     dependencies = { "nvim-tree/nvim-web-devicons" },
     cmd = "FzfLua",
     opts = {
-        keymap = {
-            fzf = {
-                ["ctrl-q"] = "select-all+accept",
-            },
-        },
+        prompt = "  ",
         winopts = {
             height = 0.85,
             width = 0.80,
+            border = "rounded",
             preview = {
                 hidden = "nohidden",
                 vertical = "up:45%",
@@ -25,6 +22,13 @@ return {
             },
         },
         fzf_opts = { ["--tiebreak"] = "begin" },
+        -- Simplify UI by removing help hints and using minimalist layout
+        hls = { border = "FloatBorder" },
+        keymap = {
+            fzf = {
+                ["ctrl-q"] = "select-all+accept",
+            },
+        },
     },
     config = function(_, opts)
       require("fzf-lua").setup(opts)
