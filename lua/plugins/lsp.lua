@@ -42,31 +42,44 @@ return {
                 vim.lsp.config("*", { 
                     capabilities = capabilities,
                     --- Ensure initialization parameters are Linux-compliant (no hostname).
-                    --- We sanitize in on_new_config to fix parameters BEFORE the initialize request.
                     on_new_config = function(config, root_dir)
                         if (config.root_uri or root_dir) and vim.uv.os_uname().sysname ~= "Windows_NT" then
                             local function sanitize_uri(uri)
-                                -- file://hostname/path -> file:///path
-                                -- If uri is just "file://", normalization to "file:///" is safer.
-                                local sanitized = uri:gsub("^file://[^/]+/", "file:///")
-                                if sanitized == "file://" then return "file:///" end
-                                return sanitized
+                                if not uri then return nil end
+                                -- Case 1: file://hostname/path -> file:///path
+                                -- Case 2: file://path (incorrectly formed) -> file:///path
+                                -- We look for the pattern file://[anything] and ensure it starts with file:///
+                                if uri:match("^file://[^/]") then
+                                    -- If it has only 2 slashes, it's malformed for Linux absolute paths.
+                                    -- We replace file:// with file:///
+                                    return uri:gsub("^file://", "file:///")
+                                end
+                                return uri
                             end
 
                             if config.root_uri then
+                                local original = config.root_uri
                                 config.root_uri = sanitize_uri(config.root_uri)
+                                if original ~= config.root_uri then
+                                    vim.notify(string.format("LSP: Sanitized root_uri: %s -> %s", original, config.root_uri), vim.log.levels.DEBUG)
+                                end
                             elseif root_dir then
                                 config.root_uri = sanitize_uri(vim.uri_from_fname(root_dir))
                             end
 
                             if config.workspace_folders then
                                 for _, folder in ipairs(config.workspace_folders) do
-                                    if folder.uri then folder.uri = sanitize_uri(folder.uri) end
+                                    if folder.uri then 
+                                        local original = folder.uri
+                                        folder.uri = sanitize_uri(folder.uri)
+                                        if original ~= folder.uri then
+                                            vim.notify(string.format("LSP: Sanitized folder.uri: %s -> %s", original, folder.uri), vim.log.levels.DEBUG)
+                                        end
+                                    end
                                 end
                             end
                         end
                     end,
-                    --- Redundant safety check after server starts.
                     on_init = function(client, _)
                         if vim.uv.os_uname().sysname ~= "Windows_NT" then
                             local function sanitize_uri(uri)
