@@ -14,6 +14,7 @@ return {
             height = 0.85,
             width = 0.80,
             border = "rounded",
+            title = false, -- Remove titles from the top of the window
             preview = {
                 hidden = "nohidden",
                 vertical = "up:45%",
@@ -21,7 +22,14 @@ return {
                 layout = "flex",
             },
         },
-        fzf_opts = { ["--tiebreak"] = "begin" },
+        fzf_opts = { 
+            ["--tiebreak"] = "begin",
+            ["--no-info"] = "", -- Remove the "1/100" match count info
+        },
+        -- Ensure all major pickers use the minimalist icon prompt
+        grep = { prompt = "  " },
+        live_grep = { prompt = "  " },
+        files = { prompt = "  " },
         -- Simplify UI but keep hints for guidance
         hls = { border = "FloatBorder" },
         keymap = {
