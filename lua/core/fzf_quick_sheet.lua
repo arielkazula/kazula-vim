@@ -8,12 +8,15 @@ function M.show_quick_sheet()
     local fzf = require('fzf-lua')
     
     -- Define your favorite search patterns here
-    -- Format: ["Display Label"] = { command_to_run }
     local sheet_items = {
         ["[Project] Search: TODO / FIXME"]    = function() fzf.live_grep({ search = "TODO|FIXME" }) end,
         ["[Project] Search: Error Logs"]      = function() fzf.live_grep({ search = "ERROR|CRITICAL|FAIL" }) end,
         ["[C++] Search: Include Headers"]     = function() fzf.live_grep({ search = "#include" }) end,
+        ["[C++] Search: Literal (No Regex)"]  = function() fzf.live_grep({ rg_opts = "--column --line-number --no-heading --color=always --smart-case --fixed-strings -e" }) end,
         ["[C++] Files: Source and Headers"]   = function() fzf.files({ cmd = "rg --files -g '*.{c,cpp,h,hpp,cc}'" }) end,
+        ["[Scoped] Search: Only in 'src/'"]   = function() fzf.live_grep({ cwd = "./src" }) end,
+        ["[Scoped] Search: Exclude 'tests/'"]  = function() fzf.live_grep({ rg_opts = "--column --line-number --no-heading --color=always --smart-case -g '!tests/*' -e" }) end,
+        ["[Type] Search: Only Lua Files"]     = function() fzf.live_grep({ rg_opts = "--column --line-number --no-heading --color=always --smart-case -tlua -e" }) end,
         ["[Config] Files: Neovim Config"]     = function() fzf.files({ cwd = vim.fn.stdpath("config") }) end,
         ["[Config] Search: Keymaps"]          = function() fzf.keymaps() end,
         ["[System] Files: Recent Files"]      = function() fzf.oldfiles() end,
