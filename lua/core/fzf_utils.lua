@@ -8,7 +8,13 @@ local M = {}
 function M.pick_dir_then_search(picker_type)
     local fzf = require('fzf-lua')
     
-    fzf.directories({
+    -- Use fd if available, otherwise fallback to find
+    local cmd = "fd --type d --hidden --exclude .git"
+    if vim.fn.executable("fd") == 0 then
+        cmd = "find . -maxdepth 4 -type d -not -path '*/.*'"
+    end
+
+    fzf.fzf_exec(cmd, {
         prompt = "Select Folder❯ ",
         winopts = { title = " 1. Select Target Folder " },
         actions = {
