@@ -28,7 +28,7 @@ return {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "harper_ls", "marksman", "jsonls",
             },
-            automatic_enable = false,
+            automatic_enable = true, -- Let mason-lspconfig handle enabling
         },
         config = function(_, opts)
             local mlsp = require("mason-lspconfig")
@@ -37,66 +37,9 @@ return {
             local capabilities = require("blink.cmp").get_lsp_capabilities()
             capabilities.offsetEncoding = { "utf-16" }
 
-            -- Set global defaults (No global root_dir blocker here)
+            -- Set global defaults
             if vim.lsp.config then
-                vim.lsp.config("*", { 
-                    capabilities = capabilities,
-                    --- Ensure initialization parameters are Linux-compliant (no hostname).
-                    on_new_config = function(config, root_dir)
-                        if (config.root_uri or root_dir) and vim.uv.os_uname().sysname ~= "Windows_NT" then
-                            local function sanitize_uri(uri)
-                                if not uri then return nil end
-                                -- Case 1: file://hostname/path -> file:///path
-                                -- Case 2: file://path (incorrectly formed) -> file:///path
-                                -- We look for the pattern file://[anything] and ensure it starts with file:///
-                                if uri:match("^file://[^/]") then
-                                    -- If it has only 2 slashes, it's malformed for Linux absolute paths.
-                                    -- We replace file:// with file:///
-                                    return uri:gsub("^file://", "file:///")
-                                end
-                                return uri
-                            end
-
-                            if config.root_uri then
-                                local original = config.root_uri
-                                config.root_uri = sanitize_uri(config.root_uri)
-                                if original ~= config.root_uri then
-                                    vim.notify(string.format("LSP: Sanitized root_uri: %s -> %s", original, config.root_uri), vim.log.levels.DEBUG)
-                                end
-                            elseif root_dir then
-                                config.root_uri = sanitize_uri(vim.uri_from_fname(root_dir))
-                            end
-
-                            if config.workspace_folders then
-                                for _, folder in ipairs(config.workspace_folders) do
-                                    if folder.uri then 
-                                        local original = folder.uri
-                                        folder.uri = sanitize_uri(folder.uri)
-                                        if original ~= folder.uri then
-                                            vim.notify(string.format("LSP: Sanitized folder.uri: %s -> %s", original, folder.uri), vim.log.levels.DEBUG)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end,
-                    on_init = function(client, _)
-                        if vim.uv.os_uname().sysname ~= "Windows_NT" then
-                            local function sanitize_uri(uri)
-                                return uri:gsub("^file://[^/]+/", "file:///")
-                            end
-                            if client.config.root_uri then
-                                client.config.root_uri = sanitize_uri(client.config.root_uri)
-                            end
-                            if client.config.workspace_folders then
-                                for _, folder in ipairs(client.config.workspace_folders) do
-                                    folder.uri = sanitize_uri(folder.uri)
-                                end
-                            end
-                        end
-                        return true
-                    end,
-                })
+                vim.lsp.config("*", { capabilities = capabilities })
             end
 
             -- Server-specific overrides using native vim.lsp.config
@@ -123,12 +66,6 @@ return {
             })
 
             vim.lsp.config("harper_ls", {
-                --- Harper-LS provides spell-checking and grammar linting.
-                --- We broaden its reach while strictly excluding virtual buffers.
-                filetypes = { 
-                    "markdown", "text", "html", "gitcommit", "lua", "python", "sh", "bash",
-                    "c", "cpp", "cc", "h", "hpp", "objc", "objcpp", "cuda", "proto", "cmake", "json"
-                },
                 settings = {
                     ["harper-ls"] = {
                         workspaceDictPath = "./spell/dictionary.txt",
@@ -145,49 +82,10 @@ return {
                     },
                 },
             })
-
-            --- Activates an LSP server only for its supported file types and on real files.
-            --- @param server_name string The name of the LSP server to enable.
-            local function safe_enable_lsp_server(server_name)
-                -- 1. Try to get filetypes from native Neovim 0.11 config first.
-                -- Use indexing [] instead of calling () to avoid "expected table" errors.
-                local native_config = vim.lsp.config and vim.lsp.config[server_name]
-                local lspconfig_config = require("lspconfig.configs")[server_name]
-                
-                local supported_filetypes = (native_config and native_config.filetypes) 
-                    or (lspconfig_config and lspconfig_config.filetypes) 
-                    or {}
-
-                vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
-                    pattern = "*",
-                    callback = function(event_args)
-                        local buffer_number = event_args.buf
-                        local current_buffer_filetype = vim.bo[buffer_number].filetype
-                        
-                        -- CRITICAL: Prevent ANY LSP activation in Oil or other virtual buffers.
-                        if current_buffer_filetype == "oil" or current_buffer_filetype == "" then
-                            return
-                        end
-
-                        local buffer_uri = vim.uri_from_bufnr(buffer_number)
-                        if not buffer_uri:match("^file://") then
-                            return
-                        end
-
-                        -- Only enable if the current filetype is in the server's supported list.
-                        -- If supported_filetypes is empty, we allow it as a fallback.
-                        local is_supported = #supported_filetypes == 0 
-                            or vim.tbl_contains(supported_filetypes, current_buffer_filetype)
-
-                        if is_supported then
-                            vim.lsp.enable(server_name)
-                        end
-                    end,
-                })
-            end
-
-            for _, server_name in ipairs(mlsp.get_installed_servers()) do
-                safe_enable_lsp_server(server_name)
+            
+            -- Enable servers
+            for _, server in ipairs(mlsp.get_installed_servers()) do
+                vim.lsp.enable(server)
             end
         end,
     },
