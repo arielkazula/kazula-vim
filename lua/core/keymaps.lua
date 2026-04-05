@@ -138,7 +138,9 @@ wk.add({
     { "<leader>sq", function() require("core.fzf_quick_sheet").show_quick_sheet() end, desc = "Search Quick Sheet" },
     { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace" },
     { "<leader>sf", ":RipSubstitute<cr>", desc = "Rip Substitute" },
-    { "<leader>st", "<cmd>TodoFzfLua keywords=TODO<cr>", desc = "Search Project TODOs" },
+    { "<leader>st", "<cmd>TodoFzfLua<cr>", desc = "Search All Project Tags" },
+    { "<leader>sT", "<cmd>TodoFzfLua cwd=%:p:h<cr>", desc = "Search Tags in Current Folder" },
+    { "<leader>sb", "<cmd>TodoFzfLua filter=buf=0<cr>", desc = "Search Tags in Current Buffer" },
 
     -- Group: [u]i
     { "<leader>u", group = "ui", icon = { icon = "󰙵 ", color = "cyan" } },

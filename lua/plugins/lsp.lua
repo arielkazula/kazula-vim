@@ -190,6 +190,9 @@ return {
                 PERF = { icon = " ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
                 NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
                 TEST = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
+                REFACTOR = { icon = " ", color = "warning", alt = { "REWRITE", "CLEAN" } },
+                DOCS = { icon = "󰈙 ", color = "info", alt = { "DOC", "DOCUMENTATION" } },
+                DEBUG = { icon = " ", color = "error", alt = { "DEBUGGING" } },
             },
             gui_style = { fg = "NONE", bg = "BOLD" },
             colors = {
