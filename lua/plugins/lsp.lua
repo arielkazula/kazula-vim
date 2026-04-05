@@ -39,7 +39,19 @@ return {
 
             -- Set global defaults (No global root_dir blocker here)
             if vim.lsp.config then
-                vim.lsp.config("*", { capabilities = capabilities })
+                vim.lsp.config("*", { 
+                    capabilities = capabilities,
+                    --- Fix the "File URL host must be 'localhost' or empty on linux" error.
+                    --- This is common in WSL, remote SSH, or containers where the hostname 
+                    --- is injected into the rootUri, causing servers like clangd to fail.
+                    on_new_config = function(config, root_dir)
+                        if config.root_uri or root_dir then
+                            local uri = config.root_uri or vim.uri_from_fname(root_dir)
+                            -- Strip the hostname: file://hostname/path -> file:///path
+                            config.root_uri = uri:gsub("file://[^/]+/", "file:///")
+                        end
+                    end,
+                })
             end
 
             -- Server-specific overrides using native vim.lsp.config
@@ -66,6 +78,8 @@ return {
             })
 
             vim.lsp.config("harper_ls", {
+                -- Explicitly restrict filetypes to prevent harper from attaching to oil://
+                filetypes = { "markdown", "text", "html", "gitcommit", "cpp", "c", "lua", "python", "sh" },
                 settings = {
                     ["harper-ls"] = {
                         workspaceDictPath = "./spell/dictionary.txt",
@@ -90,27 +104,27 @@ return {
             local function safe_enable_lsp_server(server_name)
                 -- Retrieve the server's configuration from nvim-lspconfig to get supported filetypes.
                 local server_config = require("lspconfig.configs")[server_name]
-                local supported_filetypes = (server_config and server_config.filetypes) or { "*" }
+                -- Default to an empty list if not found to avoid enabling on everything.
+                local supported_filetypes = (server_config and server_config.filetypes) or {}
 
                 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
                     pattern = "*",
                     callback = function(event_args)
                         local buffer_number = event_args.buf
                         local buffer_uri = vim.uri_from_bufnr(buffer_number)
+                        local current_buffer_filetype = vim.bo[buffer_number].filetype
 
-                        -- ONLY enable if the buffer is a real file (starts with file://).
-                        -- This avoids issues with virtual buffers like Oil or Telescope.
-                        if buffer_uri:match("^file://") then
-                            local current_buffer_filetype = vim.bo[buffer_number].filetype
+                        -- Explicitly ignore Oil buffers and other virtual filesystems.
+                        if current_buffer_filetype == "oil" or not buffer_uri:match("^file://") then
+                            return
+                        end
 
-                            -- Only enable if the current filetype is in the server's supported list,
-                            -- or if the server supports all filetypes ("*").
-                            local is_supported = vim.tbl_contains(supported_filetypes, current_buffer_filetype)
-                                or vim.tbl_contains(supported_filetypes, "*")
+                        -- Only enable if the current filetype is in the server's supported list.
+                        -- We avoid using "*" here to stay "safe" against virtual buffer leaks.
+                        local is_supported = vim.tbl_contains(supported_filetypes, current_buffer_filetype)
 
-                            if is_supported then
-                                vim.lsp.enable(server_name)
-                            end
+                        if is_supported then
+                            vim.lsp.enable(server_name)
                         end
                     end,
                 })
