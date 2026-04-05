@@ -107,10 +107,14 @@ return {
             --- avoids unnecessary LSP overhead in unrelated buffers.
             --- @param server_name string The name of the LSP server to enable.
             local function safe_enable_lsp_server(server_name)
-                -- Retrieve the server's configuration from nvim-lspconfig to get supported filetypes.
-                local server_config = require("lspconfig.configs")[server_name]
-                -- Default to an empty list if not found to avoid enabling on everything.
-                local supported_filetypes = (server_config and server_config.filetypes) or {}
+                -- 1. Try to get filetypes from native Neovim 0.11 config first.
+                -- 2. Fallback to lspconfig templates if native config isn't set.
+                local native_config = vim.lsp.config and vim.lsp.config(server_name)
+                local lspconfig_config = require("lspconfig.configs")[server_name]
+                
+                local supported_filetypes = (native_config and native_config.filetypes) 
+                    or (lspconfig_config and lspconfig_config.filetypes) 
+                    or {}
 
                 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
                     pattern = "*",
@@ -119,7 +123,6 @@ return {
                         local current_buffer_filetype = vim.bo[buffer_number].filetype
                         
                         -- CRITICAL: Prevent ANY LSP activation in Oil or other virtual buffers.
-                        -- Neovim 0.11 can attempt to auto-attach if vim.lsp.enable is called too broadly.
                         if current_buffer_filetype == "oil" or current_buffer_filetype == "" then
                             return
                         end
@@ -130,7 +133,9 @@ return {
                         end
 
                         -- Only enable if the current filetype is in the server's supported list.
-                        local is_supported = vim.tbl_contains(supported_filetypes, current_buffer_filetype)
+                        -- If supported_filetypes is empty, we allow it as a fallback (legacy behavior).
+                        local is_supported = #supported_filetypes == 0 
+                            or vim.tbl_contains(supported_filetypes, current_buffer_filetype)
 
                         if is_supported then
                             vim.lsp.enable(server_name)
