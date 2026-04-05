@@ -103,13 +103,11 @@ return {
             })
 
             --- Activates an LSP server only for its supported file types and on real files.
-            --- This prevents crashes on virtual file systems (like oil://) and 
-            --- avoids unnecessary LSP overhead in unrelated buffers.
             --- @param server_name string The name of the LSP server to enable.
             local function safe_enable_lsp_server(server_name)
                 -- 1. Try to get filetypes from native Neovim 0.11 config first.
-                -- 2. Fallback to lspconfig templates if native config isn't set.
-                local native_config = vim.lsp.config and vim.lsp.config(server_name)
+                -- Use indexing [] instead of calling () to avoid "expected table" errors.
+                local native_config = vim.lsp.config and vim.lsp.config[server_name]
                 local lspconfig_config = require("lspconfig.configs")[server_name]
                 
                 local supported_filetypes = (native_config and native_config.filetypes) 
@@ -133,7 +131,7 @@ return {
                         end
 
                         -- Only enable if the current filetype is in the server's supported list.
-                        -- If supported_filetypes is empty, we allow it as a fallback (legacy behavior).
+                        -- If supported_filetypes is empty, we allow it as a fallback.
                         local is_supported = #supported_filetypes == 0 
                             or vim.tbl_contains(supported_filetypes, current_buffer_filetype)
 
