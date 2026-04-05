@@ -87,6 +87,7 @@ wk.add({
     -- Group: [f]ile
     { "<leader>f", group = "file", icon = { icon = "󰈞 ", color = "blue" } },
     { "<leader>ff", function() require("fzf-lua").files() end, desc = "Find Files" },
+    { "<leader>fd", function() require("core.fzf_utils").pick_dir_then_search("files") end, desc = "Find in Folder" },
     { "<leader>fb", function() require("fzf-lua").buffers() end, desc = "Find Buffers" },
     { "<leader>fr", function() require("fzf-lua").oldfiles() end, desc = "Recent Files" },
     { "<leader>fc", function() require("snacks").dashboard.pick('files', {cwd = vim.fn.stdpath('config')}) end, desc = "Config Files" },
@@ -100,7 +101,7 @@ wk.add({
     { "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "Diffview Open" },
     { "<leader>gc", "<cmd>DiffviewClose<cr>", desc = "Diffview Close" },
     { "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", desc = "File History" },
-    
+
     -- Sub-Group: [g]it [x] conflicts
     { "<leader>gx", group = "conflicts", icon = { icon = "󰆚 ", color = "red" } },
     { "<leader>gxo", "<cmd>GitConflictChooseOurs<cr>", desc = "Choose Ours" },
@@ -124,7 +125,7 @@ wk.add({
     { "<leader>r", group = "run/tasks", icon = { icon = "󰐊 ", color = "green" } },
     { "<leader>rs", "<cmd>OverseerRun<CR>", desc = "Run Task" },
     { "<leader>rt", "<cmd>OverseerToggle<CR>", desc = "Toggle Task List" },
-    
+
     -- Direct Task Access (NEW)
     { "<leader>rc", function() require("overseer").run_task({ name = "C++: Generate compile_commands" }) end, desc = "Generate Compile Commands" },
     { "<leader>rb", function() require("overseer").run_task({ name = "Project: Rebuild (gcc Debug)" }) end, desc = "Rebuild (gcc Debug)" },
@@ -132,6 +133,7 @@ wk.add({
     -- Group: [s]earch
     { "<leader>s", group = "search", icon = { icon = "󰍉 ", color = "cyan" } },
     { "<leader>sg", function() require("fzf-lua").live_grep() end, desc = "Live Grep" },
+    { "<leader>sd", function() require("core.fzf_utils").pick_dir_then_search("live_grep") end, desc = "Grep in Folder" },
     { "<leader>sw", function() require("fzf-lua").grep_cword() end, desc = "Search Word" },
     { "<leader>sq", function() require("core.fzf_quick_sheet").show_quick_sheet() end, desc = "Search Quick Sheet" },
     { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace" },
