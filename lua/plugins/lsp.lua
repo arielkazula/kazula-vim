@@ -41,14 +41,15 @@ return {
             if vim.lsp.config then
                 vim.lsp.config("*", { 
                     capabilities = capabilities,
-                    --- Fix the "File URL host must be 'localhost' or empty on linux" error.
-                    --- This is common in WSL, remote SSH, or containers where the hostname 
-                    --- is injected into the rootUri, causing servers like clangd to fail.
+                    --- Ensure the LSP rootUri is Linux-compliant (no hostname).
+                    --- This solves: "File URL host must be 'localhost' or empty on linux"
+                    --- while remaining safe for all platforms.
                     on_new_config = function(config, root_dir)
-                        if config.root_uri or root_dir then
+                        if (config.root_uri or root_dir) and vim.uv.os_uname().sysname ~= "Windows_NT" then
                             local uri = config.root_uri or vim.uri_from_fname(root_dir)
-                            -- Strip the hostname: file://hostname/path -> file:///path
-                            config.root_uri = uri:gsub("file://[^/]+/", "file:///")
+                            -- Standard Linux/Unix/WSL compliant URI: file:///path/to/project
+                            -- This regex specifically targets 'file://hostname/' and normalizes to 'file:///'
+                            config.root_uri = uri:gsub("^file://[^/]+/", "file:///")
                         end
                     end,
                 })
@@ -78,8 +79,12 @@ return {
             })
 
             vim.lsp.config("harper_ls", {
-                -- Explicitly restrict filetypes to prevent harper from attaching to oil://
-                filetypes = { "markdown", "text", "html", "gitcommit", "cpp", "c", "lua", "python", "sh" },
+                --- Harper-LS provides spell-checking and grammar linting.
+                --- We broaden its reach while strictly excluding virtual buffers.
+                filetypes = { 
+                    "markdown", "text", "html", "gitcommit", "lua", "python", "sh", "bash",
+                    "c", "cpp", "cc", "h", "hpp", "objc", "objcpp", "cuda", "proto", "cmake", "json"
+                },
                 settings = {
                     ["harper-ls"] = {
                         workspaceDictPath = "./spell/dictionary.txt",
@@ -111,16 +116,20 @@ return {
                     pattern = "*",
                     callback = function(event_args)
                         local buffer_number = event_args.buf
-                        local buffer_uri = vim.uri_from_bufnr(buffer_number)
                         local current_buffer_filetype = vim.bo[buffer_number].filetype
+                        
+                        -- CRITICAL: Prevent ANY LSP activation in Oil or other virtual buffers.
+                        -- Neovim 0.11 can attempt to auto-attach if vim.lsp.enable is called too broadly.
+                        if current_buffer_filetype == "oil" or current_buffer_filetype == "" then
+                            return
+                        end
 
-                        -- Explicitly ignore Oil buffers and other virtual filesystems.
-                        if current_buffer_filetype == "oil" or not buffer_uri:match("^file://") then
+                        local buffer_uri = vim.uri_from_bufnr(buffer_number)
+                        if not buffer_uri:match("^file://") then
                             return
                         end
 
                         -- Only enable if the current filetype is in the server's supported list.
-                        -- We avoid using "*" here to stay "safe" against virtual buffer leaks.
                         local is_supported = vim.tbl_contains(supported_filetypes, current_buffer_filetype)
 
                         if is_supported then
