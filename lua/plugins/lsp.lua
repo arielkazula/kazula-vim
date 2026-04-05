@@ -41,15 +41,30 @@ return {
             if vim.lsp.config then
                 vim.lsp.config("*", { 
                     capabilities = capabilities,
-                    --- Ensure the LSP rootUri is Linux-compliant (no hostname).
+                    --- Ensure the LSP initialization parameters are Linux-compliant (no hostname).
                     --- This solves: "File URL host must be 'localhost' or empty on linux"
-                    --- while remaining safe for all platforms.
+                    --- by sanitizing both root_uri and workspace_folders.
                     on_new_config = function(config, root_dir)
                         if (config.root_uri or root_dir) and vim.uv.os_uname().sysname ~= "Windows_NT" then
-                            local uri = config.root_uri or vim.uri_from_fname(root_dir)
-                            -- Standard Linux/Unix/WSL compliant URI: file:///path/to/project
-                            -- This regex specifically targets 'file://hostname/' and normalizes to 'file:///'
-                            config.root_uri = uri:gsub("^file://[^/]+/", "file:///")
+                            local function sanitize_uri(uri)
+                                -- Normalize file://hostname/path -> file:///path
+                                return uri:gsub("^file://[^/]+/", "file:///")
+                            end
+
+                            if config.root_uri then
+                                config.root_uri = sanitize_uri(config.root_uri)
+                            elseif root_dir then
+                                config.root_uri = sanitize_uri(vim.uri_from_fname(root_dir))
+                            end
+
+                            -- Modern servers use workspaceFolders, which must also be sanitized.
+                            if config.workspace_folders then
+                                for _, folder in ipairs(config.workspace_folders) do
+                                    if folder.uri then
+                                        folder.uri = sanitize_uri(folder.uri)
+                                    end
+                                end
+                            end
                         end
                     end,
                 })
