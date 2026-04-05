@@ -77,6 +77,9 @@ return {
       },
       delete_to_trash = true,
       skip_confirm_for_simple_edits = true,
+      lsp_file_methods = {
+        enabled = false, -- Disable automatic LSP renames to avoid RPC crashes in oil://
+      },
       float = { border = "rounded" },
       view_options = { show_hidden = true },
     },

@@ -43,29 +43,25 @@ return {
                     capabilities = capabilities,
                     --- Ensure the LSP initialization parameters are Linux-compliant (no hostname).
                     --- This solves: "File URL host must be 'localhost' or empty on linux"
-                    --- by sanitizing both root_uri and workspace_folders.
-                    on_new_config = function(config, root_dir)
-                        if (config.root_uri or root_dir) and vim.uv.os_uname().sysname ~= "Windows_NT" then
+                    --- by sanitizing both root_uri and workspace_folders before initialization.
+                    on_init = function(client, initialize_result)
+                        if vim.uv.os_uname().sysname ~= "Windows_NT" then
                             local function sanitize_uri(uri)
-                                -- Normalize file://hostname/path -> file:///path
                                 return uri:gsub("^file://[^/]+/", "file:///")
                             end
 
-                            if config.root_uri then
-                                config.root_uri = sanitize_uri(config.root_uri)
-                            elseif root_dir then
-                                config.root_uri = sanitize_uri(vim.uri_from_fname(root_dir))
+                            -- Sanitize client's own view of the root
+                            if client.config.root_uri then
+                                client.config.root_uri = sanitize_uri(client.config.root_uri)
                             end
 
-                            -- Modern servers use workspaceFolders, which must also be sanitized.
-                            if config.workspace_folders then
-                                for _, folder in ipairs(config.workspace_folders) do
-                                    if folder.uri then
-                                        folder.uri = sanitize_uri(folder.uri)
-                                    end
+                            if client.config.workspace_folders then
+                                for _, folder in ipairs(client.config.workspace_folders) do
+                                    folder.uri = sanitize_uri(folder.uri)
                                 end
                             end
                         end
+                        return true
                     end,
                 })
             end
