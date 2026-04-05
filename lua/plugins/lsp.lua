@@ -41,20 +41,40 @@ return {
             if vim.lsp.config then
                 vim.lsp.config("*", { 
                     capabilities = capabilities,
-                    --- Ensure the LSP initialization parameters are Linux-compliant (no hostname).
-                    --- This solves: "File URL host must be 'localhost' or empty on linux"
-                    --- by sanitizing both root_uri and workspace_folders before initialization.
-                    on_init = function(client, initialize_result)
+                    --- Ensure initialization parameters are Linux-compliant (no hostname).
+                    --- We sanitize in on_new_config to fix parameters BEFORE the initialize request.
+                    on_new_config = function(config, root_dir)
+                        if (config.root_uri or root_dir) and vim.uv.os_uname().sysname ~= "Windows_NT" then
+                            local function sanitize_uri(uri)
+                                -- file://hostname/path -> file:///path
+                                -- If uri is just "file://", normalization to "file:///" is safer.
+                                local sanitized = uri:gsub("^file://[^/]+/", "file:///")
+                                if sanitized == "file://" then return "file:///" end
+                                return sanitized
+                            end
+
+                            if config.root_uri then
+                                config.root_uri = sanitize_uri(config.root_uri)
+                            elseif root_dir then
+                                config.root_uri = sanitize_uri(vim.uri_from_fname(root_dir))
+                            end
+
+                            if config.workspace_folders then
+                                for _, folder in ipairs(config.workspace_folders) do
+                                    if folder.uri then folder.uri = sanitize_uri(folder.uri) end
+                                end
+                            end
+                        end
+                    end,
+                    --- Redundant safety check after server starts.
+                    on_init = function(client, _)
                         if vim.uv.os_uname().sysname ~= "Windows_NT" then
                             local function sanitize_uri(uri)
                                 return uri:gsub("^file://[^/]+/", "file:///")
                             end
-
-                            -- Sanitize client's own view of the root
                             if client.config.root_uri then
                                 client.config.root_uri = sanitize_uri(client.config.root_uri)
                             end
-
                             if client.config.workspace_folders then
                                 for _, folder in ipairs(client.config.workspace_folders) do
                                     folder.uri = sanitize_uri(folder.uri)
