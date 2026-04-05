@@ -42,6 +42,8 @@ wk.add({
 
     -- Group: [b]uffer
     { "<leader>b", group = "buffer", icon = { icon = "󰈙 ", color = "azure" }, expand = function() return require("which-key.extras").expand.buf() end },
+    { "<leader>bp", "<cmd>BufferLinePick<cr>", desc = "Pick Buffer" },
+    { "<leader>bc", "<cmd>BufferLinePickClose<cr>", desc = "Pick & Close" },
 
     -- Group: [c]ode
     { "<leader>c", group = "code", icon = { icon = "󰅩 ", color = "yellow" } },
@@ -57,6 +59,7 @@ wk.add({
     { "<leader>cl", function() vim.diagnostic.open_float() end, desc = "Line Diagnostic Float" },
     { "<leader>cr", vim.lsp.buf.rename, desc = "Rename symbol" },
     { "<leader>ca", function() vim.lsp.buf.code_action() end, desc = "Code Actions" },
+    { "<leader>co", "<cmd>AerialToggle! left<cr>", desc = "Outline (Aerial)" },
     { "<leader>cv", function() require("core.struct_layout").show_layout() end, desc = "View Detailed Struct Layout" },
     { "<leader>cA", "<cmd>ClangdAST<CR>", desc = "View Detailed AST (Layout/Offsets)" },
     { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>", desc = "Switch Header/Source (C++)" },

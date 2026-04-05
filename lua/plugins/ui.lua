@@ -144,5 +144,61 @@ return {
         },
     },
 
+    -- Visual Tab Bar (Bufferline)
+    {
+        "akinsho/bufferline.nvim",
+        event = "VeryLazy",
+        dependencies = { "nvim-tree/nvim-web-devicons" },
+        opts = {
+            options = {
+                mode = "buffers",
+                separator_style = "thin",
+                show_buffer_close_icons = false,
+                show_close_icon = false,
+                diagnostics = "nvim_lsp",
+                offsets = {
+                    {
+                        filetype = "oil",
+                        text = "File Explorer",
+                        text_align = "left",
+                        separator = true,
+                    },
+                },
+            },
+        },
+    },
+
+    -- Code Outline (Aerial)
+    {
+        "stevearc/aerial.nvim",
+        event = "VeryLazy",
+        dependencies = {
+            "nvim-treesitter/nvim-treesitter",
+            "nvim-tree/nvim-web-devicons"
+        },
+        opts = {
+            on_attach = function(bufnr)
+                -- Jump forwards/backwards with '{' and '}'
+                vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
+                vim.keymap.set("n", "}", "<cmd>AerialNext<CR>", { buffer = bufnr })
+            end,
+            layout = {
+                max_width = { 40, 0.2 },
+                min_width = 20,
+            },
+            show_guides = true,
+        },
+    },
+
+    -- Better UI Primitives (Dressing)
+    {
+        "stevearc/dressing.nvim",
+        event = "VeryLazy",
+        opts = {
+            input = { border = "rounded" },
+            select = { backend = { "fzf_lua", "builtin" } },
+        },
+    },
+
     { "nvim-tree/nvim-web-devicons", lazy = true },
 }
