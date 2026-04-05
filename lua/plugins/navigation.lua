@@ -22,7 +22,7 @@ return {
             },
         },
         fzf_opts = { ["--tiebreak"] = "begin" },
-        -- Simplify UI by removing help hints and using minimalist layout
+        -- Simplify UI but keep hints for guidance
         hls = { border = "FloatBorder" },
         keymap = {
             fzf = {
