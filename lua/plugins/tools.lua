@@ -108,6 +108,10 @@ return {
         version = "*",
         event = "VeryLazy",
         config = function()
+            -- 1. Auto-pairing (Brackets, quotes, etc.)
+            require("mini.pairs").setup({})
+
+            -- 2. Surrounding (Add/delete/replace surroundings)
             require("mini.surround").setup({
                 mappings = {
                     add = "gsa", delete = "gsd", find = "gsf",
@@ -115,6 +119,8 @@ return {
                     replace = "gsr", update_n_lines = "gsn",
                 },
             })
+
+            -- 3. Movement (Move lines and selections)
             require("mini.move").setup({
                 mappings = {
                     left = "", right = "",
