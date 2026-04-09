@@ -33,6 +33,16 @@ return {
         },
       },
       {
+        name = "Git: Clang-Format (Changed Lines)",
+        builder = function()
+          return {
+            cmd = { "git", "clang-format" },
+            components = { "default", "on_result_diagnostics" },
+          }
+        end,
+        desc = "Runs git clang-format to only format lines that have been modified",
+      },
+      {
         name = "Python: Run current file",
         builder = function()
           return {

@@ -65,7 +65,8 @@ wk.add({
     { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>", desc = "Switch Header/Source (C++)" },
     { "<leader>cn", function() require("neogen").generate() end, desc = "Generate Annotations" },
     { "<leader>cs", function() require("fzf-lua").lsp_document_symbols() end, desc = "Document Symbols" },
-    { "<leader>cf", function() require("conform").format({ async = true, lsp_fallback = true }) end, desc = "Format Buffer" },
+    { "<leader>cf", function() vim.lsp.buf.format({ async = true }) end, desc = "Format Buffer (LSP)" },
+    { "<leader>cg", function() require("overseer").run_task({ name = "Git: Clang-Format (Changed Lines)" }) end, desc = "Format Changed Lines (Git)" },
     
     -- Sub-Group: [c]ode [m]cmake
     { "<leader>cm", group = "cmake", icon = { icon = "󰔚 ", color = "blue" } },
