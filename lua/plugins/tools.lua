@@ -22,13 +22,20 @@ return {
         event = "BufWritePre",
         opts = {
             formatters_by_ft = {
-                lua = { "lua-format" }, -- Replaced stylua with lua-format
+                lua = { "lua-format" },
                 python = { "black" },
                 cpp = { "clang-format" },
                 c = { "clang-format" },
                 sh = { "shfmt" },
             },
-            format_on_save = { timeout_ms = 500, lsp_fallback = true },
+            -- Increased timeout to 2000ms and using lsp_format for better compatibility
+            format_on_save = { timeout_ms = 2000, lsp_format = "fallback" },
+            formatters = {
+                ["clang-format"] = {
+                    -- Focus strictly on current file/folder using the local .clang-format
+                    prepend_args = { "--style=file", "--fallback-style=none" },
+                },
+            },
         },
     },
 
