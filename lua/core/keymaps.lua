@@ -65,7 +65,7 @@ wk.add({
     { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<CR>", desc = "Switch Header/Source (C++)" },
     { "<leader>cn", function() require("neogen").generate() end, desc = "Generate Annotations" },
     { "<leader>cs", function() require("fzf-lua").lsp_document_symbols() end, desc = "Document Symbols" },
-    { "<leader>cf", function() vim.lsp.buf.format({ async = true }) end, desc = "Format Buffer (LSP)" },
+    { "<leader>cf", function() vim.lsp.buf.format({ async = true }) end, mode = { "n", "v" }, desc = "Format (LSP)" },
     { "<leader>cg", function() require("overseer").run_task({ name = "Git: Clang-Format (Changed Lines)" }) end, desc = "Format Changed Lines (Git)" },
     
     -- Sub-Group: [c]ode [m]cmake
@@ -138,7 +138,7 @@ wk.add({
     { "<leader>sw", function() require("fzf-lua").grep_cword() end, desc = "Search Word" },
     { "<leader>sq", function() require("core.fzf_quick_sheet").show_quick_sheet() end, desc = "Search Quick Sheet" },
     { "<leader>sr", function() require("grug-far").open({ transient = true }) end, desc = "Search & Replace" },
-    { "<leader>sf", ":RipSubstitute<cr>", desc = "Rip Substitute" },
+    { "<leader>sf", ":RipSubstitute<cr>", mode = { "n", "v" }, desc = "Rip Substitute" },
     { "<leader>st", "<cmd>TodoFzfLua<cr>", desc = "Search All Project Tags" },
     { "<leader>sT", "<cmd>TodoFzfLua cwd=%:p:h<cr>", desc = "Search Tags in Current Folder" },
     { "<leader>sb", "<cmd>TodoFzfLua filter=buf=0<cr>", desc = "Search Tags in Current Buffer" },
