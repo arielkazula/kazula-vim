@@ -5,7 +5,9 @@
 return {
   {
     "saghen/blink.cmp",
-    version = '*', -- Use latest release tag for pre-built binaries
+    -- version = '*', -- Using main branch for latest fixes
+    branch = "main",
+    build = "cargo build --release", -- Ensure binary is built correctly
     dependencies = { 
       "rafamadriz/friendly-snippets",
       -- Add lazydev for better Neovim Lua API completion
