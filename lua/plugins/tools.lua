@@ -24,15 +24,19 @@ return {
             formatters_by_ft = {
                 lua = { "lua-format" },
                 python = { "black" },
-                cpp = { "clang-format" },
-                c = { "clang-format" },
+                cpp = { "lsp", "clang-format" },
+                c = { "lsp", "clang-format" },
                 sh = { "shfmt" },
             },
-            -- Increased timeout to 2000ms and using lsp_format for better compatibility
-            format_on_save = { timeout_ms = 2000, lsp_format = "fallback" },
+            -- We match main branch by using a synchronous BufWritePre format,
+            -- but with conform's improved timeout handling and fallback.
+            format_on_save = { 
+                timeout_ms = 1000, 
+                lsp_format = "fallback", 
+                async = false 
+            },
             formatters = {
                 ["clang-format"] = {
-                    -- Focus strictly on current file/folder using the local .clang-format
                     prepend_args = { "--style=file", "--fallback-style=none" },
                 },
             },
