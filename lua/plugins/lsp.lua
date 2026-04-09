@@ -99,6 +99,24 @@ return {
             vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" })
             vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" })
             
+            -- Format on save (matching main branch approach)
+            vim.api.nvim_create_autocmd("LspAttach", {
+                group = vim.api.nvim_create_augroup("lsp_format_on_save", { clear = true }),
+                callback = function(args)
+                    local client = vim.lsp.get_client_by_id(args.data.client_id)
+                    if not client then return end
+
+                    if client.supports_method("textDocument/formatting") then
+                        vim.api.nvim_create_autocmd("BufWritePre", {
+                            buffer = args.buf,
+                            callback = function()
+                                vim.lsp.buf.format({ bufnr = args.buf, id = client.id, timeout_ms = 2000 })
+                            end,
+                        })
+                    end
+                end,
+            })
+
             require("clangd_extensions").setup({
                 extensions = { autoSetHints = true, inlay_hints = { inline = false } },
                 symbol_info = { border = "rounded" },

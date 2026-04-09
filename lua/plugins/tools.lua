@@ -16,33 +16,6 @@ return {
         end,
     },
 
-    -- Lightweight and fast formatter (Conform.nvim)
-    {
-        "stevearc/conform.nvim",
-        event = "BufWritePre",
-        opts = {
-            formatters_by_ft = {
-                lua = { "lua-format" },
-                python = { "black" },
-                cpp = { "lsp", "clang-format" },
-                c = { "lsp", "clang-format" },
-                sh = { "shfmt" },
-            },
-            -- We match main branch by using a synchronous BufWritePre format,
-            -- but with conform's improved timeout handling and fallback.
-            format_on_save = { 
-                timeout_ms = 1000, 
-                lsp_format = "fallback", 
-                async = false 
-            },
-            formatters = {
-                ["clang-format"] = {
-                    prepend_args = { "--style=file", "--fallback-style=none" },
-                },
-            },
-        },
-    },
-
     -- Powerful project-wide find and replace (Grug-Far)
     {
         "magicduck/grug-far.nvim",
