@@ -10,7 +10,7 @@ local function create_floating_window(lines, title)
     vim.bo[buf].modifiable = false
     vim.bo[buf].filetype = "markdown"
 
-    local width = 95
+    local width  = math.min(95, math.floor(vim.o.columns * 0.9))
     local height = math.min(#lines, 40)
     
     local win = vim.api.nvim_open_win(buf, true, {

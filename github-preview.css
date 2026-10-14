@@ -1,0 +1,27 @@
+/* Import the exact GitHub Markdown CSS (Light & Dark mode supported) */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown.min.css');
+
+/* Replicate the GitHub repository page layout (centered, max-width 980px) */
+body {
+    display: flex;
+    justify-content: center;
+    background-color: #0d1117; /* Change to #ffffff if you want light mode */
+}
+
+/* Target the wrapper that the plugin creates */
+.markdown-body {
+    box-sizing: border-box;
+    min-width: 200px;
+    max-width: 980px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 45px;
+    /* Force GitHub's exact font stack */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+@media (max-width: 767px) {
+    .markdown-body {
+        padding: 15px;
+    }
+}

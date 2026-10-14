@@ -15,10 +15,34 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 -- 2. LSP & Diagnostics ---------------------------------------------------
+-- Show diagnostics float on hover, but only in real code buffers.
+-- Skip special buffers where floating errors are disruptive.
+local _diagnostic_ignored_fts = {
+  oil          = true,
+  overseer     = true,
+  lazy         = true,
+  mason        = true,
+  help         = true,
+  nofile       = true, -- checked via buftype
+}
 vim.api.nvim_create_autocmd("CursorHold", {
   group = augroup("lsp_diagnostics"),
   callback = function()
-    vim.diagnostic.open_float(nil, { focusable = false })
+    local ft = vim.bo.filetype
+    local bt = vim.bo.buftype
+    if _diagnostic_ignored_fts[ft] or bt == "nofile" or bt == "prompt" then
+      return
+    end
+    vim.diagnostic.open_float(nil, { focusable = false, scope = "cursor" })
+  end,
+})
+
+-- Fully disable diagnostics inside special (non-code) buffers.
+vim.api.nvim_create_autocmd("FileType", {
+  group = augroup("disable_diag_special"),
+  pattern = { "oil", "overseer", "lazy", "mason" },
+  callback = function(args)
+    vim.diagnostic.enable(false, { bufnr = args.buf })
   end,
 })
 

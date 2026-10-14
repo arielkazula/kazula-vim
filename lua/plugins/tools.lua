@@ -1,8 +1,70 @@
 -- lua/plugins/tools.lua --------------------------------------------------
--- This file contains productivity tools for task management, 
--- formatting, sessions, and advanced Git visualization.
+-- Productivity tools: formatting, task running, search/replace, sessions,
+-- Git visualization, and editor utilities.
 
 return {
+    -- ── Formatting (conform.nvim) ────────────────────────────────────────
+    -- Single source of truth for all formatters. Falls back to LSP for
+    -- filetypes not listed here. Formatters are installed via Mason.
+    {
+        "stevearc/conform.nvim",
+        event = "BufWritePre",
+        cmd   = { "ConformInfo" },
+        opts  = {
+            formatters_by_ft = {
+                -- C / C++ — clang-format (Mason: clang-format)
+                c        = { "clang_format" },
+                cpp      = { "clang_format" },
+                cc       = { "clang_format" },
+                h        = { "clang_format" },
+                hpp      = { "clang_format" },
+                -- Data
+                json     = { "jq" },
+                -- Python — black (Mason: black)
+                python   = { "black" },
+                -- Shell — shfmt (Mason: shfmt)
+                sh       = { "shfmt" },
+                bash     = { "shfmt" },
+                -- Lua — stylua (Mason: stylua)
+                lua      = { "stylua" },
+                -- Markdown / prose — prettier (Mason: prettier)
+                markdown = { "prettier" },
+            },
+            -- Auto-format on save; fall back to the attached LSP for any
+            -- filetype not explicitly listed above.
+            format_on_save = {
+                timeout_ms   = 2000,
+                lsp_format = "fallback",
+            },
+        },
+    },
+
+    -- Session management (<leader>q*)
+    {
+        "folke/persistence.nvim",
+        event = "BufReadPre",
+        opts = {},
+    },
+
+    -- CMake integration (<leader>cm*)
+    {
+        "Civitasv/cmake-tools.nvim",
+        dependencies = { "nvim-lua/plenary.nvim" },
+        cmd = {
+            "CMakeGenerate", "CMakeBuild", "CMakeRun", "CMakeStop",
+            "CMakeSelectBuildTarget", "CMakeSelectBuildType",
+        },
+        opts = {},
+    },
+
+    -- Refactoring operations (<leader>cx*)
+    {
+        "ThePrimeagen/refactoring.nvim",
+        dependencies = { "nvim-lua/plenary.nvim", "nvim-treesitter/nvim-treesitter" },
+        cmd = "Refactor",
+        opts = {},
+    },
+
     -- Sophisticated task runner (Overseer)
     {
         "stevearc/overseer.nvim",
@@ -23,27 +85,7 @@ return {
         opts = { headerMaxWidth = 80, transient = true },
     },
 
-    -- Single-tab Git Diff interface (Diffview.nvim)
-    {
-        "sindrets/diffview.nvim",
-        cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewFileHistory" },
-        opts = {},
-    },
-
-    -- Modern Markdown preview/rendering inside the buffer
-    {
-        "MeanderingProgrammer/render-markdown.nvim",
-        dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
-        ft = { "markdown" },
-        opts = {},
-    },
-
-    -- Simple and reliable session management (Persistence.nvim)
-    {
-        "folke/persistence.nvim",
-        event = "BufReadPre",
-        opts = { options = { "buffers", "curdir", "tabpages", "winsize" } },
-    },
+    -- Git plugins (neogit, diffview, …) live in plugins/git.lua.
 
     -- Regex-powered search/replace within current buffer
     {
@@ -69,48 +111,54 @@ return {
         },
     },
 
-    -- Enhanced increment/decrement (dial.nvim)
-    {
-        "monaqa/dial.nvim",
-        config = function()
-            local augend = require("dial.augend")
-            require("dial.config").augends:register_group({
-                default = {
-                    augend.integer.alias.decimal,
-                    augend.integer.alias.hex,
-                    augend.date.alias["%Y/%m/%d"],
-                    augend.constant.alias.bool,
-                    augend.semver.alias.semver,
-                },
-            })
-        end,
-    },
 
     -- Utilities (mini.nvim)
     {
         "echasnovski/mini.nvim",
         version = "*",
         event = "VeryLazy",
+        dependencies = {
+            -- textobjects queries (function/class/parameter) for mini.ai
+            { "nvim-treesitter/nvim-treesitter-textobjects", branch = "main" },
+        },
         config = function()
+            -- 0. Text objects: af/if function, ac/ic class, aa/ia argument (+ mini.ai builtins)
+            local ai = require("mini.ai")
+            ai.setup({
+                n_lines = 500,
+                custom_textobjects = {
+                    f = ai.gen_spec.treesitter({ a = "@function.outer", i = "@function.inner" }),
+                    c = ai.gen_spec.treesitter({ a = "@class.outer", i = "@class.inner" }),
+                    a = ai.gen_spec.treesitter({ a = "@parameter.outer", i = "@parameter.inner" }),
+                },
+            })
             -- 1. Auto-pairing (Brackets, quotes, etc.)
             require("mini.pairs").setup({})
 
             -- 2. Surrounding (Add/delete/replace surroundings)
             require("mini.surround").setup({
                 mappings = {
-                    add = "gsa", delete = "gsd", find = "gsf",
-                    find_left = "gsF", highlight = "gsh",
-                    replace = "gsr", update_n_lines = "gsn",
+                    add = "gsa",
+                    delete = "gsd",
+                    find = "gsf",
+                    find_left = "gsF",
+                    highlight = "gsh",
+                    replace = "gsr",
+                    update_n_lines = "gsn",
                 },
             })
 
             -- 3. Movement (Move lines and selections)
             require("mini.move").setup({
                 mappings = {
-                    left = "", right = "",
-                    down = "<M-j>", up = "<M-k>",
-                    line_left = "", line_right = "",
-                    line_down = "<M-j>", line_up = "<M-k>",
+                    left = "",
+                    right = "",
+                    down = "<M-j>",
+                    up = "<M-k>",
+                    line_left = "",
+                    line_right = "",
+                    line_down = "<M-j>",
+                    line_up = "<M-k>",
                 },
             })
         end,

@@ -32,16 +32,10 @@ function M.smart_references()
         return
     end
 
-    vim.notify("SmartRef: Grepping and Injecting context...", vim.log.levels.INFO)
-    
-    local rg_cmd = string.format("rg -l --fixed-strings --word-regexp '%s'", word)
-    local handle = io.popen(rg_cmd)
-    if not handle then return end
-    local files = handle:read("*a")
-    handle:close()
+    vim.notify("SmartRef: Grepping and injecting context...", vim.log.levels.INFO)
 
-    local file_list = {}
-    for file in files:gmatch("[^\r\n]+") do table.insert(file_list, file) end
+    -- Use an argument array so the word is never shell-interpolated (no injection risk).
+    local file_list = vim.fn.systemlist({ "rg", "-l", "--fixed-strings", "--word-regexp", word })
 
     if #file_list > 0 then
         local inject_count = 0

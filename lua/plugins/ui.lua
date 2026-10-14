@@ -1,5 +1,5 @@
 -- lua/plugins/ui.lua -----------------------------------------------------
--- This file handles the visual aspects of Neovim, including themes, 
+-- This file handles the visual aspects of Neovim, including themes,
 -- statuslines, advanced UI components, and modern folding.
 
 return {
@@ -38,13 +38,13 @@ return {
     {
         "folke/noice.nvim",
         event = "VeryLazy",
-        dependencies = { "MunifTanjim/nui.nvim", "rcarriga/nvim-notify" },
+        -- Notifications are rendered by snacks.notifier (no nvim-notify).
+        dependencies = { "MunifTanjim/nui.nvim" },
         opts = {
             lsp = {
                 override = {
                     ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
                     ["vim.lsp.util.stylize_markdown"] = true,
-                    ["cmp.entry.get_documentation"] = true,
                 },
             },
             presets = {
@@ -63,40 +63,19 @@ return {
         dependencies = { "kevinhwang91/promise-async" },
         event = "BufReadPost",
         init = function()
-            vim.o.foldcolumn = '0' 
+            vim.o.foldcolumn = '0'
             vim.o.foldlevel = 99
             vim.o.foldlevelstart = 99
             vim.o.foldenable = true
         end,
         opts = {
             provider_selector = function(bufnr, filetype, buftype)
-                return {'treesitter', 'indent'}
+                return { 'treesitter', 'indent' }
             end
         },
     },
 
-    -- Git Conflict Resolution UI
-    -- Provides high-visibility markers and one-key resolution for merge conflicts.
-    {
-        "akinsho/git-conflict.nvim",
-        version = "*",
-        config = true,
-    },
-
-    -- Gitsigns
-    {
-        "lewis6991/gitsigns.nvim",
-        event = { "BufReadPre", "BufNewFile" },
-        opts = {
-            signs = {
-                add = { text = "│" },
-                change = { text = "│" },
-                delete = { text = "_" },
-                topdelete = { text = "‾" },
-                changedelete = { text = "~" },
-            },
-        },
-    },
+    -- Git plugins (gitsigns, git-conflict, …) live in plugins/git.lua.
 
     -- Comprehensive QoL modules (Snacks.nvim)
     {
@@ -178,9 +157,9 @@ return {
         },
         opts = {
             on_attach = function(bufnr)
-                -- Jump forwards/backwards with '{' and '}'
-                vim.keymap.set("n", "{", "<cmd>AerialPrev<CR>", { buffer = bufnr })
-                vim.keymap.set("n", "}", "<cmd>AerialNext<CR>", { buffer = bufnr })
+                -- Jump between symbols with [s / ]s (keeps native { } paragraph motions)
+                vim.keymap.set("n", "[s", "<cmd>AerialPrev<CR>", { buffer = bufnr, desc = "Prev symbol" })
+                vim.keymap.set("n", "]s", "<cmd>AerialNext<CR>", { buffer = bufnr, desc = "Next symbol" })
             end,
             layout = {
                 max_width = { 40, 0.2 },
@@ -190,15 +169,52 @@ return {
         },
     },
 
-    -- Better UI Primitives (Dressing)
-    {
-        "stevearc/dressing.nvim",
-        event = "VeryLazy",
-        opts = {
-            input = { border = "rounded" },
-            select = { backend = { "fzf_lua", "builtin" } },
-        },
-    },
+    -- vim.ui.select → fzf-lua (navigation.lua); vim.ui.input → snacks.input.
 
     { "nvim-tree/nvim-web-devicons", lazy = true },
+    {
+        "MeanderingProgrammer/render-markdown.nvim",
+        -- Dependencies are required for parsing the markdown and showing icons
+        dependencies = {
+            "nvim-treesitter/nvim-treesitter",
+            "nvim-tree/nvim-web-devicons" -- Use 'echasnovski/mini.icons' if you prefer
+        },
+        ft = { "markdown" },
+        opts = {
+            -- The plugin comes with great defaults, but we can tweak it
+            code = {
+                -- Highlights code blocks with a slightly different background
+                sign = true,
+                width = 'block',
+                right_pad = 1,
+            },
+        },
+    },
+    {
+        "folke/zen-mode.nvim",
+        cmd = "ZenMode",
+        dependencies = { "folke/twilight.nvim" },
+        opts = {
+            window = {
+                -- This dictates the width of the centered text.
+                -- 100 to 120 columns usually feels very close to GitHub's max-width.
+                width = 120,
+                options = {
+                    -- These options apply ONLY when Zen Mode is active
+                    signcolumn = "no", -- Hides the gutter on the left
+                    number = false,    -- Hides line numbers for a cleaner look
+                    relativenumber = false,
+                    foldcolumn = "0",  -- Hides fold markers
+                    list = false,      -- Hides whitespace characters
+                },
+            },
+            plugins = {
+                -- Dims the background outside the centered window
+                twilight = { enabled = true },
+            }
+        }
+    },
+
+    -- Dims inactive code (used by zen-mode)
+    { "folke/twilight.nvim", cmd = { "Twilight", "TwilightEnable", "TwilightDisable" }, opts = {} },
 }
