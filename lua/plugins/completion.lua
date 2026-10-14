@@ -24,7 +24,7 @@ return {
         },
         opts = {
             -- super-tab: <Tab> accepts / jumps snippet fields, <S-Tab> back,
-            -- <C-n>/<C-p> navigate. Copilot accepts with <M-Tab> (keymaps.lua).
+            -- <C-n>/<C-p> navigate. Copilot accepts with <M-l> (keymaps.lua).
             keymap = { preset = "super-tab" },
             appearance = {
                 use_nvim_cmp_as_default = true,
@@ -32,7 +32,8 @@ return {
             },
             completion = {
                 documentation = { auto_show = true, auto_show_delay_ms = 500 },
-                ghost_text = { enabled = true },
+                -- Disabled so it doesn't clash with Copilot's inline ghost text
+                ghost_text = { enabled = false },
             },
             sources = {
                 -- Added 'lazydev' to the default list of providers

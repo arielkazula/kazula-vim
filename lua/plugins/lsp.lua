@@ -16,6 +16,8 @@ return {
                 "clang-format", "jq", "black", "shfmt", "prettier", "stylua",
                 -- Linters / misc tools
                 "codespell",
+                -- Copilot LSP (inline completion + NES)
+                "copilot-language-server",
             }
             for _, tool in ipairs(packages) do
                 local p = mr.get_package(tool)
@@ -33,7 +35,9 @@ return {
                 "clangd", "bashls", "pyright", "cmake",
                 "lua_ls", "marksman", "jsonls",
             },
-            automatic_enable = true, -- calls vim.lsp.enable() per installed server
+            -- calls vim.lsp.enable() per installed server; "copilot" excluded
+            -- because copilot-lsp enables "copilot_ls" for the same binary.
+            automatic_enable = { exclude = { "copilot" } },
         },
         config = function(_, opts)
             local mlsp = require("mason-lspconfig")
@@ -162,24 +166,16 @@ return {
         },
     },
 
-    -- 7. AI: GitHub Copilot (insert-mode completions)
-    {
-        "github/copilot.vim",
-        event = "InsertEnter",
-        -- Insert-mode ghost text. <Tab> belongs to blink.cmp; accept Copilot
-        -- with <M-Tab> / <M-l> (core/keymaps.lua). Normal-mode <Tab> is
-        -- owned by copilot-lsp (NES) below.
-        init = function()
-            vim.g.copilot_no_tab_map = true
-        end,
-    },
-
-    -- 8. AI: Copilot LSP (Next Edit Suggestions — normal-mode Tab flow)
+    -- 7. AI: Copilot via copilot_ls
+    --    * Insert-mode ghost text: native vim.lsp.inline_completion (0.12+),
+    --      accept with <M-l> (core/keymaps.lua). <Tab> belongs to blink.cmp.
+    --    * Next Edit Suggestions: copilot-lsp, normal-mode <Tab>.
     {
         "copilotlsp-nvim/copilot-lsp",
         init = function()
             vim.g.copilot_nes_debounce = 500
             vim.lsp.enable("copilot_ls")
+            vim.lsp.inline_completion.enable()
             -- Tab in normal mode: jump to/apply NES suggestion; fall back to <C-i>.
             vim.keymap.set("n", "<tab>", function()
                 local state = vim.b[vim.api.nvim_get_current_buf()].nes_state

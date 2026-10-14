@@ -88,10 +88,12 @@ wk.add({
     { "K",          function() vim.lsp.buf.hover() end,                                        desc = "LSP: hover docs" },
     { "gx",         desc = "Open with system app" },
 
-    -- ── Copilot (insert mode) — <Tab> belongs to blink.cmp ───────────────
-    -- <M-Tab> may be swallowed by the desktop (window switcher); <M-l> is the fallback.
-    { "<M-Tab>", 'copilot#Accept("")', mode = "i", expr = true, replace_keycodes = false, desc = "Copilot: accept" },
-    { "<M-l>",   'copilot#Accept("")', mode = "i", expr = true, replace_keycodes = false, desc = "Copilot: accept (fallback)" },
+    -- ── Copilot (insert mode, native inline completion) — <Tab> belongs to blink.cmp
+    { "<M-l>", function()
+        if not vim.lsp.inline_completion.get() then return "<M-l>" end
+    end, mode = "i", expr = true, desc = "Copilot: accept" },
+    { "<M-]>", function() vim.lsp.inline_completion.select({ count = 1 }) end,  mode = "i", desc = "Copilot: next suggestion" },
+    { "<M-[>", function() vim.lsp.inline_completion.select({ count = -1 }) end, mode = "i", desc = "Copilot: prev suggestion" },
 
     -- ────────────────────────────────────────────────────────────────────────
     -- [b]uffer ──────────────────────────────────────────────────────────────

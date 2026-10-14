@@ -30,7 +30,7 @@ require("lazy").setup("plugins", {
     rtp = {
       -- Disable unused built-in plugins for faster startup
       disabled_plugins = {
-        "gzip", "matchit", "matchparen", "netrwPlugin",
+        "gzip", "matchit", "netrwPlugin",
         "tarPlugin", "tohtml", "tutor", "zipPlugin",
       },
     },
